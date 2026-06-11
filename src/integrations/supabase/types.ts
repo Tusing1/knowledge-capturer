@@ -14,7 +14,160 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chunks: {
+        Row: {
+          created_at: string
+          duration_ms: number
+          error: string | null
+          id: string
+          index: number
+          lecture_id: string
+          mime_type: string
+          partial_notes: Json | null
+          status: string
+          storage_path: string
+          transcript: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number
+          error?: string | null
+          id?: string
+          index: number
+          lecture_id: string
+          mime_type?: string
+          partial_notes?: Json | null
+          status?: string
+          storage_path: string
+          transcript?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number
+          error?: string | null
+          id?: string
+          index?: number
+          lecture_id?: string
+          mime_type?: string
+          partial_notes?: Json | null
+          status?: string
+          storage_path?: string
+          transcript?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chunks_lecture_id_fkey"
+            columns: ["lecture_id"]
+            isOneToOne: false
+            referencedRelation: "lectures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lecture_outputs: {
+        Row: {
+          flashcards: Json | null
+          full_transcript: string | null
+          generated_at: string
+          lecture_id: string
+          likely_questions: Json | null
+          quotes: Json | null
+          structured_notes: Json | null
+          summary: string | null
+          user_id: string
+        }
+        Insert: {
+          flashcards?: Json | null
+          full_transcript?: string | null
+          generated_at?: string
+          lecture_id: string
+          likely_questions?: Json | null
+          quotes?: Json | null
+          structured_notes?: Json | null
+          summary?: string | null
+          user_id: string
+        }
+        Update: {
+          flashcards?: Json | null
+          full_transcript?: string | null
+          generated_at?: string
+          lecture_id?: string
+          likely_questions?: Json | null
+          quotes?: Json | null
+          structured_notes?: Json | null
+          summary?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lecture_outputs_lecture_id_fkey"
+            columns: ["lecture_id"]
+            isOneToOne: true
+            referencedRelation: "lectures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lectures: {
+        Row: {
+          course: string | null
+          created_at: string
+          ended_at: string | null
+          id: string
+          language: string
+          started_at: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          course?: string | null
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          language?: string
+          started_at?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          course?: string | null
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          language?: string
+          started_at?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
