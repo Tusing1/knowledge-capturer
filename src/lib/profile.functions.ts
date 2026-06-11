@@ -11,7 +11,8 @@ export const getProfile = createServerFn({ method: "GET" })
       .eq("id", context.userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return { profile: data, email: context.claims?.email ?? null };
+    const email = (context.claims as { email?: string } | undefined)?.email ?? null;
+    return { profile: data, email };
   });
 
 export const updateProfile = createServerFn({ method: "POST" })
