@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Json } from "@/integrations/supabase/types";
 
 const CHUNK_BUCKET = "lecture-audio";
 const TRANSCRIBE_MODEL = "google/gemini-3-flash-preview";
@@ -175,7 +176,7 @@ export const transcribeChunk = createServerFn({ method: "POST" })
 
       await context.supabase
         .from("chunks")
-        .update({ status: "transcribed", transcript, partial_notes: partialNotes })
+        .update({ status: "transcribed", transcript, partial_notes: partialNotes as Json })
         .eq("id", chunk.id);
 
       return { ok: true, transcript };
@@ -268,10 +269,10 @@ Rules:
       lecture_id: data.lectureId,
       user_id: context.userId,
       full_transcript: fullTranscript,
-      structured_notes: parsed.structured_notes ?? [],
-      quotes: parsed.quotes ?? [],
-      likely_questions: parsed.likely_questions ?? [],
-      flashcards: parsed.flashcards ?? [],
+      structured_notes: (parsed.structured_notes ?? []) as Json,
+      quotes: (parsed.quotes ?? []) as Json,
+      likely_questions: (parsed.likely_questions ?? []) as Json,
+      flashcards: (parsed.flashcards ?? []) as Json,
       summary: parsed.summary ?? null,
       generated_at: new Date().toISOString(),
     });
