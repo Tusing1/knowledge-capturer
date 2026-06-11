@@ -9,13 +9,35 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedRecordRouteImport } from './routes/_authenticated/record'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedCoursesRouteImport } from './routes/_authenticated/courses'
 import { Route as AuthenticatedLecturesLectureIdRouteImport } from './routes/_authenticated/lectures.$lectureId'
+import { Route as AuthenticatedCoursesCourseRouteImport } from './routes/_authenticated/courses.$course'
+import { Route as AuthenticatedLecturesLectureIdStudyRouteImport } from './routes/_authenticated/lectures.$lectureId.study'
 
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HowItWorksRoute = HowItWorksRouteImport.update({
+  id: '/how-it-works',
+  path: '/how-it-works',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -30,6 +52,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedRecordRoute = AuthenticatedRecordRouteImport.update({
   id: '/record',
   path: '/record',
@@ -40,59 +67,152 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCoursesRoute = AuthenticatedCoursesRouteImport.update({
+  id: '/courses',
+  path: '/courses',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedLecturesLectureIdRoute =
   AuthenticatedLecturesLectureIdRouteImport.update({
     id: '/lectures/$lectureId',
     path: '/lectures/$lectureId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCoursesCourseRoute =
+  AuthenticatedCoursesCourseRouteImport.update({
+    id: '/$course',
+    path: '/$course',
+    getParentRoute: () => AuthenticatedCoursesRoute,
+  } as any)
+const AuthenticatedLecturesLectureIdStudyRoute =
+  AuthenticatedLecturesLectureIdStudyRouteImport.update({
+    id: '/study',
+    path: '/study',
+    getParentRoute: () => AuthenticatedLecturesLectureIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
+  '/courses': typeof AuthenticatedCoursesRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/record': typeof AuthenticatedRecordRoute
-  '/lectures/$lectureId': typeof AuthenticatedLecturesLectureIdRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/courses/$course': typeof AuthenticatedCoursesCourseRoute
+  '/lectures/$lectureId': typeof AuthenticatedLecturesLectureIdRouteWithChildren
+  '/lectures/$lectureId/study': typeof AuthenticatedLecturesLectureIdStudyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
+  '/courses': typeof AuthenticatedCoursesRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/record': typeof AuthenticatedRecordRoute
-  '/lectures/$lectureId': typeof AuthenticatedLecturesLectureIdRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/courses/$course': typeof AuthenticatedCoursesCourseRoute
+  '/lectures/$lectureId': typeof AuthenticatedLecturesLectureIdRouteWithChildren
+  '/lectures/$lectureId/study': typeof AuthenticatedLecturesLectureIdStudyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
+  '/_authenticated/courses': typeof AuthenticatedCoursesRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/record': typeof AuthenticatedRecordRoute
-  '/_authenticated/lectures/$lectureId': typeof AuthenticatedLecturesLectureIdRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/courses/$course': typeof AuthenticatedCoursesCourseRoute
+  '/_authenticated/lectures/$lectureId': typeof AuthenticatedLecturesLectureIdRouteWithChildren
+  '/_authenticated/lectures/$lectureId/study': typeof AuthenticatedLecturesLectureIdStudyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard' | '/record' | '/lectures/$lectureId'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/how-it-works'
+    | '/pricing'
+    | '/privacy'
+    | '/courses'
+    | '/dashboard'
+    | '/record'
+    | '/settings'
+    | '/courses/$course'
+    | '/lectures/$lectureId'
+    | '/lectures/$lectureId/study'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/record' | '/lectures/$lectureId'
+  to:
+    | '/'
+    | '/auth'
+    | '/how-it-works'
+    | '/pricing'
+    | '/privacy'
+    | '/courses'
+    | '/dashboard'
+    | '/record'
+    | '/settings'
+    | '/courses/$course'
+    | '/lectures/$lectureId'
+    | '/lectures/$lectureId/study'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/how-it-works'
+    | '/pricing'
+    | '/privacy'
+    | '/_authenticated/courses'
     | '/_authenticated/dashboard'
     | '/_authenticated/record'
+    | '/_authenticated/settings'
+    | '/_authenticated/courses/$course'
     | '/_authenticated/lectures/$lectureId'
+    | '/_authenticated/lectures/$lectureId/study'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  HowItWorksRoute: typeof HowItWorksRoute
+  PricingRoute: typeof PricingRoute
+  PrivacyRoute: typeof PrivacyRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/how-it-works': {
+      id: '/how-it-works'
+      path: '/how-it-works'
+      fullPath: '/how-it-works'
+      preLoaderRoute: typeof HowItWorksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -114,6 +234,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/record': {
       id: '/_authenticated/record'
       path: '/record'
@@ -128,6 +255,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/courses': {
+      id: '/_authenticated/courses'
+      path: '/courses'
+      fullPath: '/courses'
+      preLoaderRoute: typeof AuthenticatedCoursesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/lectures/$lectureId': {
       id: '/_authenticated/lectures/$lectureId'
       path: '/lectures/$lectureId'
@@ -135,19 +269,64 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLecturesLectureIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/courses/$course': {
+      id: '/_authenticated/courses/$course'
+      path: '/$course'
+      fullPath: '/courses/$course'
+      preLoaderRoute: typeof AuthenticatedCoursesCourseRouteImport
+      parentRoute: typeof AuthenticatedCoursesRoute
+    }
+    '/_authenticated/lectures/$lectureId/study': {
+      id: '/_authenticated/lectures/$lectureId/study'
+      path: '/study'
+      fullPath: '/lectures/$lectureId/study'
+      preLoaderRoute: typeof AuthenticatedLecturesLectureIdStudyRouteImport
+      parentRoute: typeof AuthenticatedLecturesLectureIdRoute
+    }
   }
 }
 
+interface AuthenticatedCoursesRouteChildren {
+  AuthenticatedCoursesCourseRoute: typeof AuthenticatedCoursesCourseRoute
+}
+
+const AuthenticatedCoursesRouteChildren: AuthenticatedCoursesRouteChildren = {
+  AuthenticatedCoursesCourseRoute: AuthenticatedCoursesCourseRoute,
+}
+
+const AuthenticatedCoursesRouteWithChildren =
+  AuthenticatedCoursesRoute._addFileChildren(AuthenticatedCoursesRouteChildren)
+
+interface AuthenticatedLecturesLectureIdRouteChildren {
+  AuthenticatedLecturesLectureIdStudyRoute: typeof AuthenticatedLecturesLectureIdStudyRoute
+}
+
+const AuthenticatedLecturesLectureIdRouteChildren: AuthenticatedLecturesLectureIdRouteChildren =
+  {
+    AuthenticatedLecturesLectureIdStudyRoute:
+      AuthenticatedLecturesLectureIdStudyRoute,
+  }
+
+const AuthenticatedLecturesLectureIdRouteWithChildren =
+  AuthenticatedLecturesLectureIdRoute._addFileChildren(
+    AuthenticatedLecturesLectureIdRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCoursesRoute: typeof AuthenticatedCoursesRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedRecordRoute: typeof AuthenticatedRecordRoute
-  AuthenticatedLecturesLectureIdRoute: typeof AuthenticatedLecturesLectureIdRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedLecturesLectureIdRoute: typeof AuthenticatedLecturesLectureIdRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCoursesRoute: AuthenticatedCoursesRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedRecordRoute: AuthenticatedRecordRoute,
-  AuthenticatedLecturesLectureIdRoute: AuthenticatedLecturesLectureIdRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedLecturesLectureIdRoute:
+    AuthenticatedLecturesLectureIdRouteWithChildren,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -157,17 +336,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  HowItWorksRoute: HowItWorksRoute,
+  PricingRoute: PricingRoute,
+  PrivacyRoute: PrivacyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

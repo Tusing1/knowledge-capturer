@@ -7,7 +7,7 @@ import { cacheLecture, readCachedLecture } from "@/lib/offline-cache";
 import { AppHeader } from "@/components/app-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, RefreshCw, WifiOff } from "lucide-react";
+import { ArrowLeft, BookOpen, Loader2, RefreshCw, WifiOff } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/lectures/$lectureId")({
@@ -114,6 +114,13 @@ function LecturePage() {
           {status === "failed" && (
             <Button variant="outline" onClick={retryFinalize}>
               <RefreshCw className="h-4 w-4" /> Retry notes
+            </Button>
+          )}
+          {status === "ready" && (
+            <Button asChild variant="outline">
+              <Link to="/_authenticated/lectures/$lectureId/study" params={{ lectureId }}>
+                <BookOpen className="h-4 w-4" /> Study mode
+              </Link>
             </Button>
           )}
         </div>

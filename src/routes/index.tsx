@@ -32,9 +32,13 @@ function Landing() {
           </span>
           LectureLoop
         </div>
-        <Button asChild variant="outline" size="sm">
-          <Link to="/auth">Sign in</Link>
-        </Button>
+        <nav className="flex items-center gap-1 text-sm">
+          <Link to="/how-it-works" className="rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground">How it works</Link>
+          <Link to="/pricing" className="rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground">Pricing</Link>
+          <Button asChild variant="outline" size="sm" className="ml-2">
+            <Link to="/auth">Sign in</Link>
+          </Button>
+        </nav>
       </header>
 
       <main className="mx-auto max-w-5xl px-4 pb-20 pt-12 sm:pt-20">
@@ -66,6 +70,17 @@ function Landing() {
           </Feature>
         </div>
       </main>
+
+      <footer className="mt-8 border-t border-border/60">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-6 text-xs text-muted-foreground">
+          <p>© {new Date().getFullYear()} LectureLoop</p>
+          <nav className="flex gap-4">
+            <Link to="/how-it-works" className="hover:text-foreground">How it works</Link>
+            <Link to="/pricing" className="hover:text-foreground">Pricing</Link>
+            <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
+          </nav>
+        </div>
+      </footer>
     </div>
   );
 }
