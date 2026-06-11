@@ -12,9 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedRecordRouteImport } from './routes/_authenticated/record'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedCoursesRouteImport } from './routes/_authenticated/courses'
 import { Route as AuthenticatedLecturesLectureIdRouteImport } from './routes/_authenticated/lectures.$lectureId'
+import { Route as AuthenticatedCoursesCourseRouteImport } from './routes/_authenticated/courses.$course'
+import { Route as AuthenticatedLecturesLectureIdStudyRouteImport } from './routes/_authenticated/lectures.$lectureId.study'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -30,6 +34,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedRecordRoute = AuthenticatedRecordRouteImport.update({
   id: '/record',
   path: '/record',
@@ -40,49 +49,100 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCoursesRoute = AuthenticatedCoursesRouteImport.update({
+  id: '/courses',
+  path: '/courses',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedLecturesLectureIdRoute =
   AuthenticatedLecturesLectureIdRouteImport.update({
     id: '/lectures/$lectureId',
     path: '/lectures/$lectureId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCoursesCourseRoute =
+  AuthenticatedCoursesCourseRouteImport.update({
+    id: '/$course',
+    path: '/$course',
+    getParentRoute: () => AuthenticatedCoursesRoute,
+  } as any)
+const AuthenticatedLecturesLectureIdStudyRoute =
+  AuthenticatedLecturesLectureIdStudyRouteImport.update({
+    id: '/study',
+    path: '/study',
+    getParentRoute: () => AuthenticatedLecturesLectureIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/courses': typeof AuthenticatedCoursesRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/record': typeof AuthenticatedRecordRoute
-  '/lectures/$lectureId': typeof AuthenticatedLecturesLectureIdRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/courses/$course': typeof AuthenticatedCoursesCourseRoute
+  '/lectures/$lectureId': typeof AuthenticatedLecturesLectureIdRouteWithChildren
+  '/lectures/$lectureId/study': typeof AuthenticatedLecturesLectureIdStudyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/courses': typeof AuthenticatedCoursesRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/record': typeof AuthenticatedRecordRoute
-  '/lectures/$lectureId': typeof AuthenticatedLecturesLectureIdRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/courses/$course': typeof AuthenticatedCoursesCourseRoute
+  '/lectures/$lectureId': typeof AuthenticatedLecturesLectureIdRouteWithChildren
+  '/lectures/$lectureId/study': typeof AuthenticatedLecturesLectureIdStudyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/courses': typeof AuthenticatedCoursesRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/record': typeof AuthenticatedRecordRoute
-  '/_authenticated/lectures/$lectureId': typeof AuthenticatedLecturesLectureIdRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/courses/$course': typeof AuthenticatedCoursesCourseRoute
+  '/_authenticated/lectures/$lectureId': typeof AuthenticatedLecturesLectureIdRouteWithChildren
+  '/_authenticated/lectures/$lectureId/study': typeof AuthenticatedLecturesLectureIdStudyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard' | '/record' | '/lectures/$lectureId'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/courses'
+    | '/dashboard'
+    | '/record'
+    | '/settings'
+    | '/courses/$course'
+    | '/lectures/$lectureId'
+    | '/lectures/$lectureId/study'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/record' | '/lectures/$lectureId'
+  to:
+    | '/'
+    | '/auth'
+    | '/courses'
+    | '/dashboard'
+    | '/record'
+    | '/settings'
+    | '/courses/$course'
+    | '/lectures/$lectureId'
+    | '/lectures/$lectureId/study'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/courses'
     | '/_authenticated/dashboard'
     | '/_authenticated/record'
+    | '/_authenticated/settings'
+    | '/_authenticated/courses/$course'
     | '/_authenticated/lectures/$lectureId'
+    | '/_authenticated/lectures/$lectureId/study'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -114,6 +174,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/record': {
       id: '/_authenticated/record'
       path: '/record'
@@ -128,6 +195,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/courses': {
+      id: '/_authenticated/courses'
+      path: '/courses'
+      fullPath: '/courses'
+      preLoaderRoute: typeof AuthenticatedCoursesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/lectures/$lectureId': {
       id: '/_authenticated/lectures/$lectureId'
       path: '/lectures/$lectureId'
@@ -135,19 +209,64 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLecturesLectureIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/courses/$course': {
+      id: '/_authenticated/courses/$course'
+      path: '/$course'
+      fullPath: '/courses/$course'
+      preLoaderRoute: typeof AuthenticatedCoursesCourseRouteImport
+      parentRoute: typeof AuthenticatedCoursesRoute
+    }
+    '/_authenticated/lectures/$lectureId/study': {
+      id: '/_authenticated/lectures/$lectureId/study'
+      path: '/study'
+      fullPath: '/lectures/$lectureId/study'
+      preLoaderRoute: typeof AuthenticatedLecturesLectureIdStudyRouteImport
+      parentRoute: typeof AuthenticatedLecturesLectureIdRoute
+    }
   }
 }
 
+interface AuthenticatedCoursesRouteChildren {
+  AuthenticatedCoursesCourseRoute: typeof AuthenticatedCoursesCourseRoute
+}
+
+const AuthenticatedCoursesRouteChildren: AuthenticatedCoursesRouteChildren = {
+  AuthenticatedCoursesCourseRoute: AuthenticatedCoursesCourseRoute,
+}
+
+const AuthenticatedCoursesRouteWithChildren =
+  AuthenticatedCoursesRoute._addFileChildren(AuthenticatedCoursesRouteChildren)
+
+interface AuthenticatedLecturesLectureIdRouteChildren {
+  AuthenticatedLecturesLectureIdStudyRoute: typeof AuthenticatedLecturesLectureIdStudyRoute
+}
+
+const AuthenticatedLecturesLectureIdRouteChildren: AuthenticatedLecturesLectureIdRouteChildren =
+  {
+    AuthenticatedLecturesLectureIdStudyRoute:
+      AuthenticatedLecturesLectureIdStudyRoute,
+  }
+
+const AuthenticatedLecturesLectureIdRouteWithChildren =
+  AuthenticatedLecturesLectureIdRoute._addFileChildren(
+    AuthenticatedLecturesLectureIdRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCoursesRoute: typeof AuthenticatedCoursesRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedRecordRoute: typeof AuthenticatedRecordRoute
-  AuthenticatedLecturesLectureIdRoute: typeof AuthenticatedLecturesLectureIdRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedLecturesLectureIdRoute: typeof AuthenticatedLecturesLectureIdRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCoursesRoute: AuthenticatedCoursesRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedRecordRoute: AuthenticatedRecordRoute,
-  AuthenticatedLecturesLectureIdRoute: AuthenticatedLecturesLectureIdRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedLecturesLectureIdRoute:
+    AuthenticatedLecturesLectureIdRouteWithChildren,
 }
 
 const AuthenticatedRouteRouteWithChildren =
