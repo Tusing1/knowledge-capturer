@@ -36,7 +36,7 @@ function StudyPage() {
       <AppHeader />
       <main className="mx-auto max-w-3xl px-4 py-6">
         <Link
-          to="/_authenticated/lectures/$lectureId"
+          to="/lectures/$lectureId"
           params={{ lectureId }}
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >

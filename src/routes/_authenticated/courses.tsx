@@ -43,7 +43,7 @@ function CoursesPage() {
               {grouped.map(([course, count]) => (
                 <li key={course}>
                   <Link
-                    to="/_authenticated/courses/$course"
+                    to="/courses/$course"
                     params={{ course: encodeURIComponent(course) }}
                     className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-accent"
                   >
