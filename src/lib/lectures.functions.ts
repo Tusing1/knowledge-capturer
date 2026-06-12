@@ -100,6 +100,38 @@ export const registerChunk = createServerFn({ method: "POST" })
     return { chunkId: row.id as string };
   });
 
+// Free-tier path: client did on-device speech-to-text. We just store the text.
+export const submitTranscriptChunk = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        lectureId: z.string().uuid(),
+        index: z.number().int().min(0).max(10000),
+        transcript: z.string().min(1).max(50000),
+        durationMs: z.number().int().min(0).max(10 * 60 * 1000).default(0),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase
+      .from("chunks")
+      .insert({
+        lecture_id: data.lectureId,
+        user_id: context.userId,
+        index: data.index,
+        storage_path: `ondevice/${data.lectureId}/${data.index}`,
+        duration_ms: data.durationMs,
+        mime_type: "text/plain",
+        status: "transcribed",
+        transcript: data.transcript,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    return { chunkId: row.id as string };
+  });
+
 export const transcribeChunk = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ chunkId: z.string().uuid() }).parse(d))
