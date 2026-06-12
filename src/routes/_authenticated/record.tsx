@@ -7,13 +7,14 @@ import {
   transcribeChunk,
   endLecture,
   finalizeLecture,
+  submitTranscriptChunk,
 } from "@/lib/lectures.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mic, Square, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Mic, Square, Loader2, CheckCircle2, AlertCircle, Cloud, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/record")({
@@ -29,6 +30,8 @@ type ChunkUiState = {
   preview?: string;
 };
 
+type Mode = "ondevice" | "cloud";
+
 function RecordPage() {
   const navigate = useNavigate();
   const start = useServerFn(startLecture);
@@ -36,14 +39,17 @@ function RecordPage() {
   const transcribe = useServerFn(transcribeChunk);
   const end = useServerFn(endLecture);
   const finalize = useServerFn(finalizeLecture);
+  const submitText = useServerFn(submitTranscriptChunk);
 
   const [title, setTitle] = useState("");
   const [course, setCourse] = useState("");
+  const [mode, setMode] = useState<Mode>("ondevice");
   const [lectureId, setLectureId] = useState<string | null>(null);
   const [recording, setRecording] = useState(false);
   const [chunks, setChunks] = useState<ChunkUiState[]>([]);
   const [elapsed, setElapsed] = useState(0);
   const [finalizing, setFinalizing] = useState(false);
+  const [liveText, setLiveText] = useState("");
 
   const streamRef = useRef<MediaStream | null>(null);
   const recordersRef = useRef<MediaRecorder[]>([]);
@@ -53,6 +59,16 @@ function RecordPage() {
   const cycleTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const elapsedTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lectureIdRef = useRef<string | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const bufferRef = useRef<string>("");
+  const interimRef = useRef<string>("");
+  const sliceStartRef = useRef<number>(0);
+
+  const SpeechRecognition: any =
+    typeof window !== "undefined"
+      ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      : null;
+  const hasOnDevice = !!SpeechRecognition;
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -77,6 +93,15 @@ function RecordPage() {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     recordersRef.current = [];
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.onend = null;
+        recognitionRef.current.stop();
+      } catch {
+        /* ignore */
+      }
+      recognitionRef.current = null;
+    }
   }
 
   function pickMime(): string {
@@ -92,12 +117,11 @@ function RecordPage() {
       toast.error("Give your lecture a title first.");
       return;
     }
+    if (mode === "ondevice" && !hasOnDevice) {
+      toast.error("On-device transcription isn't supported on this browser. Use Chrome on desktop/Android, or switch to Cloud mode.");
+      return;
+    }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-      });
-      streamRef.current = stream;
-
       const { lectureId: id } = await start({ data: { title: title.trim(), course: course.trim() || undefined } });
       setLectureId(id);
       lectureIdRef.current = id;
@@ -105,34 +129,93 @@ function RecordPage() {
       setChunks([]);
       indexRef.current = 0;
       activeRef.current = 0;
+      sliceStartRef.current = Date.now();
+      bufferRef.current = "";
+      interimRef.current = "";
+      setLiveText("");
 
-      const mime = pickMime();
-      // Two recorders sharing one stream; alternate every CHUNK_MS.
-      recordersRef.current = [makeRecorder(stream, mime), makeRecorder(stream, mime)];
-      recordersRef.current[0].start();
+      if (mode === "cloud") {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        });
+        streamRef.current = stream;
+        const mime = pickMime();
+        recordersRef.current = [makeRecorder(stream, mime), makeRecorder(stream, mime)];
+        recordersRef.current[0].start();
+        cycleTimerRef.current = setInterval(() => {
+          const current = recordersRef.current[activeRef.current];
+          const next = recordersRef.current[1 - activeRef.current];
+          try { next.start(); } catch { /* ignore */ }
+          try { if (current.state === "recording") current.stop(); } catch { /* ignore */ }
+          activeRef.current = 1 - activeRef.current;
+        }, CHUNK_MS);
+      } else {
+        startOnDeviceRecognition();
+        cycleTimerRef.current = setInterval(() => {
+          flushOnDeviceSlice();
+        }, CHUNK_MS);
+      }
 
       const startedAt = Date.now();
       elapsedTimerRef.current = setInterval(() => setElapsed(Date.now() - startedAt), 1000);
-
-      cycleTimerRef.current = setInterval(() => {
-        const current = recordersRef.current[activeRef.current];
-        const next = recordersRef.current[1 - activeRef.current];
-        try {
-          next.start();
-        } catch {
-          /* ignore */
-        }
-        try {
-          if (current.state === "recording") current.stop();
-        } catch {
-          /* ignore */
-        }
-        activeRef.current = 1 - activeRef.current;
-      }, CHUNK_MS);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not start recording");
       stopAll();
       setRecording(false);
+    }
+  }
+
+  function startOnDeviceRecognition() {
+    const rec = new SpeechRecognition();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = navigator.language || "en-US";
+    rec.onresult = (event: any) => {
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const res = event.results[i];
+        if (res.isFinal) {
+          bufferRef.current += (bufferRef.current ? " " : "") + res[0].transcript.trim();
+        } else {
+          interim += res[0].transcript;
+        }
+      }
+      interimRef.current = interim;
+      setLiveText((bufferRef.current + " " + interim).slice(-400));
+    };
+    rec.onerror = (e: any) => {
+      if (e.error === "no-speech" || e.error === "aborted") return;
+      console.warn("Speech recognition error:", e.error);
+    };
+    rec.onend = () => {
+      // Auto-restart while we're still recording (mobile browsers stop after silence)
+      if (recognitionRef.current === rec && lectureIdRef.current && !finalizing) {
+        try { rec.start(); } catch { /* ignore */ }
+      }
+    };
+    recognitionRef.current = rec;
+    try { rec.start(); } catch (err) {
+      toast.error("Could not access the microphone for on-device transcription.");
+      throw err;
+    }
+  }
+
+  async function flushOnDeviceSlice() {
+    const text = bufferRef.current.trim();
+    bufferRef.current = "";
+    if (text.length < 5) return;
+    const idx = indexRef.current++;
+    const duration = Date.now() - sliceStartRef.current;
+    sliceStartRef.current = Date.now();
+    const id = lectureIdRef.current;
+    if (!id) return;
+    setChunks((c) => [...c, { index: idx, status: "uploading", preview: text.slice(0, 180) }]);
+    try {
+      await submitText({ data: { lectureId: id, index: idx, transcript: text, durationMs: Math.min(duration, CHUNK_MS) } });
+      setChunks((c) => c.map((x) => (x.index === idx ? { ...x, status: "done" } : x)));
+    } catch (err) {
+      setChunks((c) => c.map((x) => (x.index === idx ? { ...x, status: "failed" } : x)));
+      toast.error(`Slice ${idx + 1}: ${err instanceof Error ? err.message : "save failed"}`);
     }
   }
 
@@ -189,6 +272,10 @@ function RecordPage() {
     if (!id) return;
     setRecording(false);
     setFinalizing(true);
+    // Flush any pending on-device text BEFORE tearing down recognition
+    if (mode === "ondevice") {
+      await flushOnDeviceSlice();
+    }
     stopAll();
     // Wait briefly for last onstop handlers
     await new Promise((r) => setTimeout(r, 800));
@@ -243,6 +330,40 @@ function RecordPage() {
               <Label htmlFor="course">Course (optional)</Label>
               <Input id="course" placeholder="e.g. MATH 202" value={course} onChange={(e) => setCourse(e.target.value)} />
             </div>
+            <div className="space-y-2">
+              <Label>Transcription mode</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMode("ondevice")}
+                  className={`rounded-lg border p-3 text-left transition ${mode === "ondevice" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"}`}
+                >
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Smartphone className="h-4 w-4" /> On-device <span className="ml-auto text-xs text-muted-foreground">Free</span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Your phone/laptop transcribes locally. Nothing leaves the device until notes are built.
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode("cloud")}
+                  className={`rounded-lg border p-3 text-left transition ${mode === "cloud" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"}`}
+                >
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Cloud className="h-4 w-4" /> Cloud <span className="ml-auto text-xs text-muted-foreground">Pro</span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Higher accuracy with our cloud model. Recommended for noisy rooms and accents.
+                  </p>
+                </button>
+              </div>
+              {mode === "ondevice" && !hasOnDevice && (
+                <p className="text-xs text-destructive">
+                  Your browser doesn't expose on-device speech recognition. Switch to Cloud, or use Chrome.
+                </p>
+              )}
+            </div>
             <Button size="lg" className="w-full" onClick={handleStart}>
               <Mic className="h-4 w-4" /> Start recording
             </Button>
@@ -258,7 +379,9 @@ function RecordPage() {
               <div>
                 <div className="flex items-center gap-2">
                   {recording && <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" /><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" /></span>}
-                  <p className="text-sm font-medium">{recording ? "Recording" : finalizing ? "Building your notes…" : "Stopped"}</p>
+                  <p className="text-sm font-medium">
+                    {recording ? `Recording · ${mode === "ondevice" ? "On-device" : "Cloud"}` : finalizing ? "Building your notes…" : "Stopped"}
+                  </p>
                 </div>
                 <p className="mt-0.5 font-mono text-2xl tabular-nums">{minutes}:{seconds}</p>
               </div>
@@ -272,6 +395,15 @@ function RecordPage() {
                 </Button>
               ) : null}
             </div>
+
+            {mode === "ondevice" && recording && (
+              <div className="mt-4 rounded-md border border-border/60 bg-background/40 p-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Live transcript</p>
+                <p className="mt-1 min-h-[2.5rem] text-sm text-foreground/80">
+                  {liveText || <span className="text-muted-foreground">Listening…</span>}
+                </p>
+              </div>
+            )}
 
             <div className="mt-6 space-y-2">
               {chunks.length === 0 ? (
