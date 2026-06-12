@@ -96,7 +96,7 @@ function LecturePage() {
     <div className="min-h-screen bg-background">
       <AppHeader />
       <main className="mx-auto max-w-4xl px-4 py-6">
-        <Link to="/_authenticated/dashboard" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <Link to="/dashboard" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-3.5 w-3.5" /> All lectures
         </Link>
         <div className="mt-3 flex items-start justify-between gap-4">
@@ -118,7 +118,7 @@ function LecturePage() {
           )}
           {status === "ready" && (
             <Button asChild variant="outline">
-              <Link to="/_authenticated/lectures/$lectureId/study" params={{ lectureId }}>
+              <Link to="/lectures/$lectureId/study" params={{ lectureId }}>
                 <BookOpen className="h-4 w-4" /> Study mode
               </Link>
             </Button>

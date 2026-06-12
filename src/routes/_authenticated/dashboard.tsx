@@ -30,7 +30,7 @@ function DashboardPage() {
             <h1 className="text-2xl font-semibold tracking-tight">Your lectures</h1>
             <p className="mt-1 text-sm text-muted-foreground">All recordings, notes, and study material in one place.</p>
           </div>
-          <Button onClick={() => navigate({ to: "/_authenticated/record" })}>
+          <Button onClick={() => navigate({ to: "/record" })}>
             <Mic className="h-4 w-4" /> New lecture
           </Button>
         </div>
@@ -45,7 +45,7 @@ function DashboardPage() {
           ) : (data?.lectures ?? []).length === 0 ? (
             <div className="p-12 text-center">
               <p className="text-sm text-muted-foreground">No lectures yet.</p>
-              <Button className="mt-4" onClick={() => navigate({ to: "/_authenticated/record" })}>
+              <Button className="mt-4" onClick={() => navigate({ to: "/record" })}>
                 <Mic className="h-4 w-4" /> Record your first lecture
               </Button>
             </div>
@@ -54,7 +54,7 @@ function DashboardPage() {
               {data!.lectures.map((l) => (
                 <li key={l.id}>
                   <Link
-                    to="/_authenticated/lectures/$lectureId"
+                    to="/lectures/$lectureId"
                     params={{ lectureId: l.id }}
                     className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-accent"
                   >

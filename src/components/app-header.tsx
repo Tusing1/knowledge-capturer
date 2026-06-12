@@ -18,7 +18,7 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4">
-        <Link to="/_authenticated/dashboard" className="flex items-center gap-2 font-semibold tracking-tight">
+        <Link to="/dashboard" className="flex items-center gap-2 font-semibold tracking-tight">
           <span className="grid h-7 w-7 place-items-center rounded-md bg-foreground text-background">
             <Mic className="h-3.5 w-3.5" />
           </span>
@@ -26,7 +26,7 @@ export function AppHeader() {
         </Link>
         <nav className="ml-2 flex items-center gap-1 text-sm">
           <Link
-            to="/_authenticated/dashboard"
+            to="/dashboard"
             className="rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             activeProps={{ className: "rounded-md px-3 py-1.5 bg-accent text-foreground" }}
           >
@@ -35,7 +35,7 @@ export function AppHeader() {
             </span>
           </Link>
           <Link
-            to="/_authenticated/record"
+            to="/record"
             className="rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             activeProps={{ className: "rounded-md px-3 py-1.5 bg-accent text-foreground" }}
           >
@@ -44,7 +44,7 @@ export function AppHeader() {
             </span>
           </Link>
           <Link
-            to="/_authenticated/courses"
+            to="/courses"
             className="rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             activeProps={{ className: "rounded-md px-3 py-1.5 bg-accent text-foreground" }}
           >
@@ -53,7 +53,7 @@ export function AppHeader() {
             </span>
           </Link>
           <Link
-            to="/_authenticated/settings"
+            to="/settings"
             className="rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             activeProps={{ className: "rounded-md px-3 py-1.5 bg-accent text-foreground" }}
           >

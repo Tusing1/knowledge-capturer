@@ -286,7 +286,7 @@ function RecordPage() {
       await end({ data: { lectureId: id } });
       await finalize({ data: { lectureId: id } });
       toast.success("Lecture notes ready");
-      navigate({ to: "/_authenticated/lectures/$lectureId", params: { lectureId: id } });
+      navigate({ to: "/lectures/$lectureId", params: { lectureId: id } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Finalize failed");
       setFinalizing(false);

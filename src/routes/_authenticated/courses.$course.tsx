@@ -26,7 +26,7 @@ function CourseDetailPage() {
     <div className="min-h-screen bg-background">
       <AppHeader />
       <main className="mx-auto max-w-4xl px-4 py-6">
-        <Link to="/_authenticated/courses" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <Link to="/courses" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-3.5 w-3.5" /> All courses
         </Link>
         <h1 className="mt-3 text-2xl font-semibold tracking-tight">{decoded}</h1>
@@ -44,7 +44,7 @@ function CourseDetailPage() {
               {lectures.map((l) => (
                 <li key={l.id}>
                   <Link
-                    to="/_authenticated/lectures/$lectureId"
+                    to="/lectures/$lectureId"
                     params={{ lectureId: l.id }}
                     className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-accent"
                   >
