@@ -15,6 +15,7 @@ import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ShareShareIdRouteImport } from './routes/share.$shareId'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated/search'
 import { Route as AuthenticatedRecordRouteImport } from './routes/_authenticated/record'
@@ -51,6 +52,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShareShareIdRoute = ShareShareIdRouteImport.update({
+  id: '/share/$shareId',
+  path: '/share/$shareId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/record': typeof AuthenticatedRecordRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/share/$shareId': typeof ShareShareIdRoute
   '/courses/$course': typeof AuthenticatedCoursesCourseRoute
   '/lectures/$lectureId': typeof AuthenticatedLecturesLectureIdRouteWithChildren
   '/lectures/$lectureId/study': typeof AuthenticatedLecturesLectureIdStudyRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/record': typeof AuthenticatedRecordRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/share/$shareId': typeof ShareShareIdRoute
   '/courses/$course': typeof AuthenticatedCoursesCourseRoute
   '/lectures/$lectureId': typeof AuthenticatedLecturesLectureIdRouteWithChildren
   '/lectures/$lectureId/study': typeof AuthenticatedLecturesLectureIdStudyRoute
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/_authenticated/record': typeof AuthenticatedRecordRoute
   '/_authenticated/search': typeof AuthenticatedSearchRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/share/$shareId': typeof ShareShareIdRoute
   '/_authenticated/courses/$course': typeof AuthenticatedCoursesCourseRoute
   '/_authenticated/lectures/$lectureId': typeof AuthenticatedLecturesLectureIdRouteWithChildren
   '/_authenticated/lectures/$lectureId/study': typeof AuthenticatedLecturesLectureIdStudyRoute
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
     | '/record'
     | '/search'
     | '/settings'
+    | '/share/$shareId'
     | '/courses/$course'
     | '/lectures/$lectureId'
     | '/lectures/$lectureId/study'
@@ -172,6 +182,7 @@ export interface FileRouteTypes {
     | '/record'
     | '/search'
     | '/settings'
+    | '/share/$shareId'
     | '/courses/$course'
     | '/lectures/$lectureId'
     | '/lectures/$lectureId/study'
@@ -188,6 +199,7 @@ export interface FileRouteTypes {
     | '/_authenticated/record'
     | '/_authenticated/search'
     | '/_authenticated/settings'
+    | '/share/$shareId'
     | '/_authenticated/courses/$course'
     | '/_authenticated/lectures/$lectureId'
     | '/_authenticated/lectures/$lectureId/study'
@@ -200,6 +212,7 @@ export interface RootRouteChildren {
   HowItWorksRoute: typeof HowItWorksRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
+  ShareShareIdRoute: typeof ShareShareIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -244,6 +257,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/share/$shareId': {
+      id: '/share/$shareId'
+      path: '/share/$shareId'
+      fullPath: '/share/$shareId'
+      preLoaderRoute: typeof ShareShareIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/settings': {
@@ -360,6 +380,7 @@ const rootRouteChildren: RootRouteChildren = {
   HowItWorksRoute: HowItWorksRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
+  ShareShareIdRoute: ShareShareIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
