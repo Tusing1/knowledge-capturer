@@ -331,6 +331,35 @@ function Empty({ children }: { children: React.ReactNode }) {
   return <div className="rounded-xl border border-dashed border-border bg-card/40 p-8 text-center text-sm text-muted-foreground">{children}</div>;
 }
 
+function buildMarkdown(title: string, output: any): string {
+  if (!output) return `# ${title}\n\n(no notes yet)\n`;
+  const lines: string[] = [`# ${title}`, ""];
+  if (output.summary) lines.push("## Summary", output.summary, "");
+  if (Array.isArray(output.structured_notes) && output.structured_notes.length) {
+    lines.push("## Notes");
+    for (const n of output.structured_notes) {
+      lines.push(`### ${n.heading ?? ""}`);
+      for (const b of n.bullets ?? []) lines.push(`- ${b}`);
+      lines.push("");
+    }
+  }
+  if (Array.isArray(output.quotes) && output.quotes.length) {
+    lines.push("## Quotes");
+    for (const q of output.quotes) lines.push(`> ${q.text}`, "");
+  }
+  if (Array.isArray(output.likely_questions) && output.likely_questions.length) {
+    lines.push("## Likely questions");
+    for (const q of output.likely_questions) lines.push(`- ${q.question}`);
+    lines.push("");
+  }
+  if (Array.isArray(output.flashcards) && output.flashcards.length) {
+    lines.push("## Flashcards");
+    for (const f of output.flashcards) lines.push(`- **Q:** ${f.q}  \n  **A:** ${f.a}`);
+    lines.push("");
+  }
+  return lines.join("\n");
+}
+
 function Flashcard({ q, a }: { q: string; a: string }) {
   const [flipped, setFlipped] = useState(false);
   return (
