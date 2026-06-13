@@ -1,12 +1,14 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mic } from "lucide-react";
+import { Mic, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { ensureDemoAccount } from "@/lib/extra.functions";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -24,6 +26,8 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
+  const ensureDemo = useServerFn(ensureDemoAccount);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -65,6 +69,21 @@ function AuthPage() {
     navigate({ to: "/dashboard", replace: true });
   }
 
+  async function handleDemo() {
+    setDemoLoading(true);
+    try {
+      const { email: demoEmail, password: demoPassword } = await ensureDemo();
+      const { error } = await supabase.auth.signInWithPassword({ email: demoEmail, password: demoPassword });
+      if (error) throw error;
+      toast.success("Signed in as Demo Premium");
+      navigate({ to: "/dashboard", replace: true });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Demo sign-in failed");
+    } finally {
+      setDemoLoading(false);
+    }
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm">
@@ -82,6 +101,17 @@ function AuthPage() {
 
           <Button type="button" variant="outline" className="mt-5 w-full" onClick={handleGoogle}>
             Continue with Google
+          </Button>
+
+          <Button
+            type="button"
+            variant="secondary"
+            className="mt-2 w-full"
+            onClick={handleDemo}
+            disabled={demoLoading}
+          >
+            {demoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            Try Demo Premium
           </Button>
 
           <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
