@@ -7,12 +7,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 
-const TABS = [
+type Tab = { to: "/dashboard" | "/courses" | "/record" | "/search"; label: string; icon: typeof Mic; primary?: boolean };
+const TABS: Tab[] = [
   { to: "/dashboard", label: "Lectures", icon: LayoutDashboard },
   { to: "/courses", label: "Courses", icon: BookOpen },
   { to: "/record", label: "Record", icon: Mic, primary: true },
   { to: "/search", label: "Search", icon: Search },
-] as const;
+];
 
 export function MobileTabBar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
