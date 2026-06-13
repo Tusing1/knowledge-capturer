@@ -117,9 +117,12 @@ export type Database = {
           created_at: string
           ended_at: string | null
           id: string
+          is_favorite: boolean
           language: string
+          share_id: string | null
           started_at: string
           status: string
+          tags: string[]
           title: string
           updated_at: string
           user_id: string
@@ -129,9 +132,12 @@ export type Database = {
           created_at?: string
           ended_at?: string | null
           id?: string
+          is_favorite?: boolean
           language?: string
+          share_id?: string | null
           started_at?: string
           status?: string
+          tags?: string[]
           title?: string
           updated_at?: string
           user_id: string
@@ -141,9 +147,12 @@ export type Database = {
           created_at?: string
           ended_at?: string | null
           id?: string
+          is_favorite?: boolean
           language?: string
+          share_id?: string | null
           started_at?: string
           status?: string
+          tags?: string[]
           title?: string
           updated_at?: string
           user_id?: string
@@ -155,16 +164,25 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          is_demo: boolean
+          is_pro: boolean
+          pro_expires_at: string | null
         }
         Insert: {
           created_at?: string
           display_name?: string | null
           id: string
+          is_demo?: boolean
+          is_pro?: boolean
+          pro_expires_at?: string | null
         }
         Update: {
           created_at?: string
           display_name?: string | null
           id?: string
+          is_demo?: boolean
+          is_pro?: boolean
+          pro_expires_at?: string | null
         }
         Relationships: []
       }

@@ -41,7 +41,7 @@ export const listLectures = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("lectures")
-      .select("id, title, course, status, started_at, ended_at")
+      .select("id, title, course, status, started_at, ended_at, tags, is_favorite, share_id")
       .order("started_at", { ascending: false });
     if (error) throw new Error(error.message);
     return { lectures: data ?? [] };
