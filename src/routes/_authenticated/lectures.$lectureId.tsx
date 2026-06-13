@@ -1,13 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { getLecture, finalizeLecture } from "@/lib/lectures.functions";
+import { toggleFavorite, setLectureTags, createShareLink } from "@/lib/extra.functions";
 import { cacheLecture, readCachedLecture } from "@/lib/offline-cache";
 import { AppHeader } from "@/components/app-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, BookOpen, Loader2, RefreshCw, WifiOff } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, BookOpen, Loader2, RefreshCw, WifiOff, Star, Share2, Download, Copy, X } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/lectures/$lectureId")({
@@ -24,8 +26,13 @@ function LecturePage() {
   const { lectureId } = Route.useParams();
   const get = useServerFn(getLecture);
   const finalize = useServerFn(finalizeLecture);
+  const favFn = useServerFn(toggleFavorite);
+  const tagsFn = useServerFn(setLectureTags);
+  const shareFn = useServerFn(createShareLink);
+  const qc = useQueryClient();
   const [offline, setOffline] = useState(false);
   const [cached, setCached] = useState<any>(null);
+  const [tagInput, setTagInput] = useState("");
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["lecture", lectureId],
@@ -76,6 +83,54 @@ function LecturePage() {
 
   const { lecture, output } = view;
   const status = lecture?.status;
+  const lectureAny = lecture as any;
+  const isFav = !!lectureAny?.is_favorite;
+  const tags: string[] = lectureAny?.tags ?? [];
+  const shareId: string | null = lectureAny?.share_id ?? null;
+  const shareUrl = shareId ? `${typeof window !== "undefined" ? window.location.origin : ""}/share/${shareId}` : null;
+
+  const fav = useMutation({
+    mutationFn: (value: boolean) => favFn({ data: { lectureId, value } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["lecture", lectureId] }),
+  });
+
+  const saveTags = useMutation({
+    mutationFn: (next: string[]) => tagsFn({ data: { lectureId, tags: next } }),
+    onSuccess: () => {
+      setTagInput("");
+      qc.invalidateQueries({ queryKey: ["lecture", lectureId] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Tag rejected"),
+  });
+
+  const share = useMutation({
+    mutationFn: (enable: boolean) => shareFn({ data: { lectureId, enable } }),
+    onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: ["lecture", lectureId] });
+      if (r.shareId) toast.success("Share link enabled");
+      else toast.success("Share link disabled");
+    },
+  });
+
+  function addTag() {
+    const v = tagInput.trim();
+    if (!v || tags.includes(v)) return;
+    saveTags.mutate([...tags, v]);
+  }
+  function removeTag(t: string) {
+    saveTags.mutate(tags.filter((x) => x !== t));
+  }
+
+  function exportMarkdown() {
+    const md = buildMarkdown(lecture?.title ?? "Lecture", output);
+    const blob = new Blob([md], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${(lecture?.title ?? "lecture").replace(/[^a-z0-9-_ ]/gi, "_")}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   async function retryFinalize() {
     try {
@@ -100,7 +155,7 @@ function LecturePage() {
           <ArrowLeft className="h-3.5 w-3.5" /> All lectures
         </Link>
         <div className="mt-3 flex items-start justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             <h1 className="text-2xl font-semibold tracking-tight">{lecture?.title}</h1>
             <p className="mt-0.5 text-sm text-muted-foreground">
               {lecture?.course ? `${lecture.course} · ` : ""}status: {status}
@@ -111,19 +166,77 @@ function LecturePage() {
               )}
             </p>
           </div>
-          {status === "failed" && (
-            <Button variant="outline" onClick={retryFinalize}>
-              <RefreshCw className="h-4 w-4" /> Retry notes
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => fav.mutate(!isFav)}
+              aria-label={isFav ? "Unfavorite" : "Favorite"}
+            >
+              <Star className={isFav ? "h-4 w-4 fill-amber-500 text-amber-500" : "h-4 w-4"} />
             </Button>
-          )}
-          {status === "ready" && (
-            <Button asChild variant="outline">
-              <Link to="/lectures/$lectureId/study" params={{ lectureId }}>
-                <BookOpen className="h-4 w-4" /> Study mode
-              </Link>
-            </Button>
-          )}
+            {status === "failed" && (
+              <Button variant="outline" onClick={retryFinalize}>
+                <RefreshCw className="h-4 w-4" /> Retry
+              </Button>
+            )}
+            {status === "ready" && (
+              <>
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/lectures/$lectureId/study" params={{ lectureId }}>
+                    <BookOpen className="h-4 w-4" /> Study
+                  </Link>
+                </Button>
+                <Button variant="outline" size="sm" onClick={exportMarkdown}>
+                  <Download className="h-4 w-4" /> Export
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => share.mutate(!shareId)}>
+                  <Share2 className="h-4 w-4" /> {shareId ? "Unshare" : "Share"}
+                </Button>
+              </>
+            )}
+          </div>
         </div>
+
+        {/* Tags */}
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          {tags.map((t) => (
+            <span key={t} className="inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs">
+              {t}
+              <button onClick={() => removeTag(t)} aria-label={`Remove ${t}`} className="text-muted-foreground hover:text-foreground">
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+          <form
+            onSubmit={(e) => { e.preventDefault(); addTag(); }}
+            className="inline-flex items-center"
+          >
+            <Input
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              placeholder="+ add tag"
+              className="h-7 w-32 text-xs"
+            />
+          </form>
+        </div>
+
+        {shareUrl && (
+          <div className="mt-3 flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-xs">
+            <Share2 className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="truncate">{shareUrl}</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                navigator.clipboard.writeText(shareUrl);
+                toast.success("Copied");
+              }}
+            >
+              <Copy className="h-3.5 w-3.5" /> Copy
+            </Button>
+          </div>
+        )}
 
         {status === "processing" && (
           <div className="mt-6 flex items-center gap-2 rounded-md border border-border bg-card p-4 text-sm text-muted-foreground">
