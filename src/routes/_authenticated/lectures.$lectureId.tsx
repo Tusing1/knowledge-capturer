@@ -194,6 +194,13 @@ function LecturePage() {
   const quotes = (output?.quotes ?? []) as Quote[];
   const questions = (output?.likely_questions ?? []) as Question[];
   const flashcards = (output?.flashcards ?? []) as Flashcard[];
+  const allChunks = ((view as any)?.chunks ?? []) as Array<{
+    id: string;
+    index: number;
+    transcript: string | null;
+    storage_path: string;
+  }>;
+  const playableChunks = allChunks.filter((c) => c.storage_path && !c.storage_path.startsWith("ondevice/"));
 
   return (
     <div className="min-h-screen bg-background">
@@ -376,6 +383,19 @@ function LecturePage() {
             </TabsContent>
 
             <TabsContent value="transcript" className="mt-4">
+              {playableChunks.length > 0 && (
+                <div className="mb-4 space-y-2">
+                  {playableChunks.map((c) => (
+                    <ChunkPlayer
+                      key={c.id}
+                      chunkId={c.id}
+                      index={c.index}
+                      transcript={c.transcript ?? ""}
+                      onSign={() => signUrl({ data: { chunkId: c.id } }).then((r) => r.url)}
+                    />
+                  ))}
+                </div>
+              )}
               <div className="rounded-xl border border-border bg-card p-5">
                 <pre className="whitespace-pre-wrap text-sm leading-relaxed">{output.full_transcript}</pre>
               </div>
