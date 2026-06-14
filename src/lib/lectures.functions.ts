@@ -56,7 +56,7 @@ export const getLecture = createServerFn({ method: "POST" })
         context.supabase.from("lectures").select("*").eq("id", data.lectureId).single(),
         context.supabase
           .from("chunks")
-          .select("id, index, status, transcript, partial_notes, duration_ms, created_at, error")
+          .select("id, index, status, transcript, partial_notes, duration_ms, created_at, error, storage_path, mime_type")
           .eq("lecture_id", data.lectureId)
           .order("index", { ascending: true }),
         context.supabase.from("lecture_outputs").select("*").eq("lecture_id", data.lectureId).maybeSingle(),
