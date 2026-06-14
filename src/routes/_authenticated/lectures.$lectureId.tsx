@@ -455,3 +455,50 @@ function Flashcard({ q, a }: { q: string; a: string }) {
     </button>
   );
 }
+
+function ChunkPlayer({
+  chunkId,
+  index,
+  transcript,
+  onSign,
+}: {
+  chunkId: string;
+  index: number;
+  transcript: string;
+  onSign: () => Promise<string>;
+}) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  async function load() {
+    if (url) return;
+    setLoading(true);
+    try {
+      setUrl(await onSign());
+    } catch {
+      /* ignore */
+    } finally {
+      setLoading(false);
+    }
+  }
+  return (
+    <div className="rounded-lg border border-border bg-card p-3">
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          Slice {index + 1}
+        </span>
+        {!url && (
+          <button
+            onClick={load}
+            disabled={loading}
+            className="ml-auto inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-accent"
+          >
+            {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
+            Play audio
+          </button>
+        )}
+      </div>
+      {url && <audio controls src={url} className="mt-2 w-full" />}
+      {transcript && <p className="mt-2 line-clamp-3 text-xs text-muted-foreground">{transcript}</p>}
+    </div>
+  );
+}
