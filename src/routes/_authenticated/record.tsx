@@ -362,17 +362,30 @@ function RecordPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setMode("cloud")}
-                  className={`rounded-lg border p-3 text-left transition ${mode === "cloud" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"}`}
+                  onClick={() => isPro && setMode("cloud")}
+                  disabled={!isPro}
+                  className={`rounded-lg border p-3 text-left transition ${mode === "cloud" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"} ${!isPro ? "opacity-60" : ""}`}
                 >
                   <div className="flex items-center gap-2 text-sm font-medium">
-                    <Cloud className="h-4 w-4" /> Cloud <span className="ml-auto text-xs text-muted-foreground">Pro</span>
+                    <Cloud className="h-4 w-4" /> Cloud
+                    <span className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground">
+                      {!isPro && <Lock className="h-3 w-3" />} Pro
+                    </span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Higher accuracy with our cloud model. Recommended for noisy rooms and accents.
                   </p>
                 </button>
               </div>
+              {!isPro && (
+                <p className="text-xs text-muted-foreground">
+                  Want cloud transcription?{" "}
+                  <Link to="/pricing" className="font-medium text-foreground underline-offset-4 hover:underline">
+                    Upgrade to Pro
+                  </Link>
+                  .
+                </p>
+              )}
               {mode === "ondevice" && !hasOnDevice && (
                 <p className="text-xs text-destructive">
                   Your browser doesn't expose on-device speech recognition. Switch to Cloud, or use Chrome.
