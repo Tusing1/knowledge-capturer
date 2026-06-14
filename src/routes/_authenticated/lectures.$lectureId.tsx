@@ -2,15 +2,16 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { getLecture, finalizeLecture } from "@/lib/lectures.functions";
+import { getLecture, finalizeLecture, signChunkUrl } from "@/lib/lectures.functions";
 import { toggleFavorite, setLectureTags, createShareLink } from "@/lib/extra.functions";
 import { cacheLecture, readCachedLecture } from "@/lib/offline-cache";
 import { AppHeader } from "@/components/app-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, BookOpen, Loader2, RefreshCw, WifiOff, Star, Share2, Download, Copy, X } from "lucide-react";
+import { ArrowLeft, BookOpen, Loader2, RefreshCw, WifiOff, Star, Share2, Download, Copy, X, FileDown, Play } from "lucide-react";
 import { toast } from "sonner";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/_authenticated/lectures/$lectureId")({
   head: () => ({ meta: [{ title: "Lecture — LectureLoop" }] }),
@@ -29,6 +30,7 @@ function LecturePage() {
   const favFn = useServerFn(toggleFavorite);
   const tagsFn = useServerFn(setLectureTags);
   const shareFn = useServerFn(createShareLink);
+  const signUrl = useServerFn(signChunkUrl);
   const qc = useQueryClient();
   const [offline, setOffline] = useState(false);
   const [cached, setCached] = useState<any>(null);
@@ -132,6 +134,52 @@ function LecturePage() {
     URL.revokeObjectURL(url);
   }
 
+  async function exportPdf() {
+    const { jsPDF } = await import("jspdf");
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const margin = 48;
+    const width = doc.internal.pageSize.getWidth() - margin * 2;
+    const pageH = doc.internal.pageSize.getHeight();
+    let y = margin;
+    const line = (text: string, size = 11, bold = false) => {
+      doc.setFont("helvetica", bold ? "bold" : "normal");
+      doc.setFontSize(size);
+      const lines = doc.splitTextToSize(text, width);
+      for (const l of lines) {
+        if (y > pageH - margin) { doc.addPage(); y = margin; }
+        doc.text(l, margin, y);
+        y += size * 1.3;
+      }
+    };
+    line(lecture?.title ?? "Lecture", 18, true);
+    if (lecture?.course) line(lecture.course, 10);
+    y += 6;
+    if (output?.summary) { line("Summary", 13, true); line(output.summary); y += 6; }
+    if (notes.length) {
+      line("Notes", 13, true);
+      for (const n of notes) {
+        line(n.heading ?? "", 11, true);
+        for (const b of n.bullets ?? []) line(`• ${b}`);
+        y += 4;
+      }
+    }
+    if (quotes.length) {
+      line("Quotes", 13, true);
+      for (const q of quotes) line(`" ${q.text} "`);
+      y += 4;
+    }
+    if (questions.length) {
+      line("Likely questions", 13, true);
+      for (const q of questions) line(`• ${q.question}`);
+      y += 4;
+    }
+    if (flashcards.length) {
+      line("Flashcards", 13, true);
+      for (const f of flashcards) { line(`Q: ${f.q}`, 11, true); line(`A: ${f.a}`); y += 4; }
+    }
+    doc.save(`${(lecture?.title ?? "lecture").replace(/[^a-z0-9-_ ]/gi, "_")}.pdf`);
+  }
+
   async function retryFinalize() {
     try {
       await finalize({ data: { lectureId } });
@@ -146,6 +194,13 @@ function LecturePage() {
   const quotes = (output?.quotes ?? []) as Quote[];
   const questions = (output?.likely_questions ?? []) as Question[];
   const flashcards = (output?.flashcards ?? []) as Flashcard[];
+  const allChunks = ((view as any)?.chunks ?? []) as Array<{
+    id: string;
+    index: number;
+    transcript: string | null;
+    storage_path: string;
+  }>;
+  const playableChunks = allChunks.filter((c) => c.storage_path && !c.storage_path.startsWith("ondevice/"));
 
   return (
     <div className="min-h-screen bg-background">
@@ -187,9 +242,21 @@ function LecturePage() {
                     <BookOpen className="h-4 w-4" /> Study
                   </Link>
                 </Button>
-                <Button variant="outline" size="sm" onClick={exportMarkdown}>
-                  <Download className="h-4 w-4" /> Export
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Download className="h-4 w-4" /> Export
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={exportMarkdown}>
+                      <FileDown className="h-4 w-4" /> Markdown (.md)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={exportPdf}>
+                      <FileDown className="h-4 w-4" /> PDF
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button variant="outline" size="sm" onClick={() => share.mutate(!shareId)}>
                   <Share2 className="h-4 w-4" /> {shareId ? "Unshare" : "Share"}
                 </Button>
@@ -316,6 +383,19 @@ function LecturePage() {
             </TabsContent>
 
             <TabsContent value="transcript" className="mt-4">
+              {playableChunks.length > 0 && (
+                <div className="mb-4 space-y-2">
+                  {playableChunks.map((c) => (
+                    <ChunkPlayer
+                      key={c.id}
+                      chunkId={c.id}
+                      index={c.index}
+                      transcript={c.transcript ?? ""}
+                      onSign={() => signUrl({ data: { chunkId: c.id } }).then((r) => r.url)}
+                    />
+                  ))}
+                </div>
+              )}
               <div className="rounded-xl border border-border bg-card p-5">
                 <pre className="whitespace-pre-wrap text-sm leading-relaxed">{output.full_transcript}</pre>
               </div>
@@ -373,5 +453,52 @@ function Flashcard({ q, a }: { q: string; a: string }) {
       </p>
       <p className="mt-2 text-sm">{flipped ? a : q}</p>
     </button>
+  );
+}
+
+function ChunkPlayer({
+  chunkId,
+  index,
+  transcript,
+  onSign,
+}: {
+  chunkId: string;
+  index: number;
+  transcript: string;
+  onSign: () => Promise<string>;
+}) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  async function load() {
+    if (url) return;
+    setLoading(true);
+    try {
+      setUrl(await onSign());
+    } catch {
+      /* ignore */
+    } finally {
+      setLoading(false);
+    }
+  }
+  return (
+    <div className="rounded-lg border border-border bg-card p-3">
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          Slice {index + 1}
+        </span>
+        {!url && (
+          <button
+            onClick={load}
+            disabled={loading}
+            className="ml-auto inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-accent"
+          >
+            {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
+            Play audio
+          </button>
+        )}
+      </div>
+      {url && <audio controls src={url} className="mt-2 w-full" />}
+      {transcript && <p className="mt-2 line-clamp-3 text-xs text-muted-foreground">{transcript}</p>}
+    </div>
   );
 }

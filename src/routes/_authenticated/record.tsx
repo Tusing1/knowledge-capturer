@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { getProfile } from "@/lib/profile.functions";
 import {
   startLecture,
   registerChunk,
@@ -14,8 +16,9 @@ import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mic, Square, Loader2, CheckCircle2, AlertCircle, Cloud, Smartphone } from "lucide-react";
+import { Mic, Square, Loader2, CheckCircle2, AlertCircle, Cloud, Smartphone, Lock } from "lucide-react";
 import { toast } from "sonner";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/record")({
   head: () => ({ meta: [{ title: "Record lecture — LectureLoop" }] }),
@@ -40,10 +43,18 @@ function RecordPage() {
   const end = useServerFn(endLecture);
   const finalize = useServerFn(finalizeLecture);
   const submitText = useServerFn(submitTranscriptChunk);
+  const profileFn = useServerFn(getProfile);
+  const { data: profileData } = useQuery({ queryKey: ["profile"], queryFn: () => profileFn() });
+  const isPro = !!(profileData?.profile as { is_pro?: boolean } | null)?.is_pro;
 
   const [title, setTitle] = useState("");
   const [course, setCourse] = useState("");
   const [mode, setMode] = useState<Mode>("ondevice");
+
+  // Default Pro users to cloud once profile loads
+  useEffect(() => {
+    if (isPro) setMode("cloud");
+  }, [isPro]);
   const [lectureId, setLectureId] = useState<string | null>(null);
   const [recording, setRecording] = useState(false);
   const [chunks, setChunks] = useState<ChunkUiState[]>([]);
@@ -115,6 +126,10 @@ function RecordPage() {
   async function handleStart() {
     if (!title.trim()) {
       toast.error("Give your lecture a title first.");
+      return;
+    }
+    if (mode === "cloud" && !isPro) {
+      toast.error("Cloud transcription is a Pro feature. Upgrade or use on-device.");
       return;
     }
     if (mode === "ondevice" && !hasOnDevice) {
@@ -347,17 +362,30 @@ function RecordPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setMode("cloud")}
-                  className={`rounded-lg border p-3 text-left transition ${mode === "cloud" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"}`}
+                  onClick={() => isPro && setMode("cloud")}
+                  disabled={!isPro}
+                  className={`rounded-lg border p-3 text-left transition ${mode === "cloud" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"} ${!isPro ? "opacity-60" : ""}`}
                 >
                   <div className="flex items-center gap-2 text-sm font-medium">
-                    <Cloud className="h-4 w-4" /> Cloud <span className="ml-auto text-xs text-muted-foreground">Pro</span>
+                    <Cloud className="h-4 w-4" /> Cloud
+                    <span className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground">
+                      {!isPro && <Lock className="h-3 w-3" />} Pro
+                    </span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Higher accuracy with our cloud model. Recommended for noisy rooms and accents.
                   </p>
                 </button>
               </div>
+              {!isPro && (
+                <p className="text-xs text-muted-foreground">
+                  Want cloud transcription?{" "}
+                  <Link to="/pricing" className="font-medium text-foreground underline-offset-4 hover:underline">
+                    Upgrade to Pro
+                  </Link>
+                  .
+                </p>
+              )}
               {mode === "ondevice" && !hasOnDevice && (
                 <p className="text-xs text-destructive">
                   Your browser doesn't expose on-device speech recognition. Switch to Cloud, or use Chrome.
