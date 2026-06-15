@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Mic, LayoutDashboard, LogOut, BookOpen, Settings, Search } from "lucide-react";
+import { Mic, LayoutDashboard, LogOut, BookOpen, Settings, Search, Brain } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
@@ -61,6 +61,15 @@ export function AppHeader() {
           >
             <span className="inline-flex items-center gap-1.5">
               <Search className="h-3.5 w-3.5" /> Search
+            </span>
+          </Link>
+          <Link
+            to="/review"
+            className="rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            activeProps={{ className: "rounded-md px-3 py-1.5 bg-accent text-foreground" }}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <Brain className="h-3.5 w-3.5" /> Review
             </span>
           </Link>
           <Link

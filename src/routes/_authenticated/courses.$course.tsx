@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listLectures } from "@/lib/lectures.functions";
 import { AppHeader } from "@/components/app-header";
-import { ArrowLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ArrowLeft, ChevronRight, Loader2, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 
 export const Route = createFileRoute("/_authenticated/courses/$course")({
@@ -30,7 +31,14 @@ function CourseDetailPage() {
           <ArrowLeft className="h-3.5 w-3.5" /> All courses
         </Link>
         <h1 className="mt-3 text-2xl font-semibold tracking-tight">{decoded}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{lectures.length} lecture{lectures.length === 1 ? "" : "s"}</p>
+        <div className="mt-1 flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">{lectures.length} lecture{lectures.length === 1 ? "" : "s"}</p>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/courses/$course/room" params={{ course }}>
+              <Users className="h-4 w-4" /> Course room
+            </Link>
+          </Button>
+        </div>
 
         <div className="mt-6 rounded-xl border border-border bg-card">
           {isLoading ? (

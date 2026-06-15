@@ -9,7 +9,7 @@ import { AppHeader } from "@/components/app-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, BookOpen, Loader2, RefreshCw, WifiOff, Star, Share2, Download, Copy, X, FileDown, Play } from "lucide-react";
+import { ArrowLeft, BookOpen, Loader2, RefreshCw, WifiOff, Star, Share2, Download, Copy, X, FileDown, Play, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
@@ -259,6 +259,11 @@ function LecturePage() {
                 </DropdownMenu>
                 <Button variant="outline" size="sm" onClick={() => share.mutate(!shareId)}>
                   <Share2 className="h-4 w-4" /> {shareId ? "Unshare" : "Share"}
+                </Button>
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/lectures/$lectureId/extras" params={{ lectureId }}>
+                    <Sparkles className="h-4 w-4" /> Extras
+                  </Link>
                 </Button>
               </>
             )}
