@@ -67,10 +67,153 @@ export type Database = {
           },
         ]
       }
+      course_syllabi: {
+        Row: {
+          course: string
+          created_at: string
+          id: string
+          syllabus: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          course: string
+          created_at?: string
+          id?: string
+          syllabus: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          course?: string
+          created_at?: string
+          id?: string
+          syllabus?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      enrollments: {
+        Row: {
+          course: string
+          created_at: string
+          id: string
+          professor_id: string
+          student_id: string
+        }
+        Insert: {
+          course: string
+          created_at?: string
+          id?: string
+          professor_id: string
+          student_id: string
+        }
+        Update: {
+          course?: string
+          created_at?: string
+          id?: string
+          professor_id?: string
+          student_id?: string
+        }
+        Relationships: []
+      }
+      exams: {
+        Row: {
+          course: string | null
+          created_at: string
+          exam_date: string
+          id: string
+          lecture_ids: string[]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          course?: string | null
+          created_at?: string
+          exam_date: string
+          id?: string
+          lecture_ids?: string[]
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          course?: string | null
+          created_at?: string
+          exam_date?: string
+          id?: string
+          lecture_ids?: string[]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      flashcard_reviews: {
+        Row: {
+          back: string
+          card_index: number
+          created_at: string
+          due_at: string
+          ease_factor: number
+          front: string
+          id: string
+          interval_days: number
+          last_reviewed_at: string | null
+          lecture_id: string
+          repetitions: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          back: string
+          card_index: number
+          created_at?: string
+          due_at?: string
+          ease_factor?: number
+          front: string
+          id?: string
+          interval_days?: number
+          last_reviewed_at?: string | null
+          lecture_id: string
+          repetitions?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          back?: string
+          card_index?: number
+          created_at?: string
+          due_at?: string
+          ease_factor?: number
+          front?: string
+          id?: string
+          interval_days?: number
+          last_reviewed_at?: string | null
+          lecture_id?: string
+          repetitions?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_reviews_lecture_id_fkey"
+            columns: ["lecture_id"]
+            isOneToOne: false
+            referencedRelation: "lectures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lecture_outputs: {
         Row: {
+          citations: Json | null
+          concept_map: Json | null
           flashcards: Json | null
           full_transcript: string | null
+          gap_analysis: Json | null
           generated_at: string
           lecture_id: string
           likely_questions: Json | null
@@ -78,10 +221,14 @@ export type Database = {
           structured_notes: Json | null
           summary: string | null
           user_id: string
+          whiteboard_captures: Json | null
         }
         Insert: {
+          citations?: Json | null
+          concept_map?: Json | null
           flashcards?: Json | null
           full_transcript?: string | null
+          gap_analysis?: Json | null
           generated_at?: string
           lecture_id: string
           likely_questions?: Json | null
@@ -89,10 +236,14 @@ export type Database = {
           structured_notes?: Json | null
           summary?: string | null
           user_id: string
+          whiteboard_captures?: Json | null
         }
         Update: {
+          citations?: Json | null
+          concept_map?: Json | null
           flashcards?: Json | null
           full_transcript?: string | null
+          gap_analysis?: Json | null
           generated_at?: string
           lecture_id?: string
           likely_questions?: Json | null
@@ -100,6 +251,7 @@ export type Database = {
           structured_notes?: Json | null
           summary?: string | null
           user_id?: string
+          whiteboard_captures?: Json | null
         }
         Relationships: [
           {
@@ -119,7 +271,10 @@ export type Database = {
           id: string
           is_favorite: boolean
           language: string
+          output_language: string
           share_id: string | null
+          slides_storage_path: string | null
+          slides_text: string | null
           started_at: string
           status: string
           tags: string[]
@@ -134,7 +289,10 @@ export type Database = {
           id?: string
           is_favorite?: boolean
           language?: string
+          output_language?: string
           share_id?: string | null
+          slides_storage_path?: string | null
+          slides_text?: string | null
           started_at?: string
           status?: string
           tags?: string[]
@@ -149,7 +307,10 @@ export type Database = {
           id?: string
           is_favorite?: boolean
           language?: string
+          output_language?: string
           share_id?: string | null
+          slides_storage_path?: string | null
+          slides_text?: string | null
           started_at?: string
           status?: string
           tags?: string[]
@@ -186,15 +347,109 @@ export type Database = {
         }
         Relationships: []
       }
+      shared_note_votes: {
+        Row: {
+          created_at: string
+          note_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          note_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          note_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_note_votes_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "shared_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shared_notes: {
+        Row: {
+          content: string
+          course: string
+          created_at: string
+          id: string
+          kind: string
+          lecture_id: string | null
+          user_id: string
+          votes: number
+        }
+        Insert: {
+          content: string
+          course: string
+          created_at?: string
+          id?: string
+          kind?: string
+          lecture_id?: string | null
+          user_id: string
+          votes?: number
+        }
+        Update: {
+          content?: string
+          course?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          lecture_id?: string | null
+          user_id?: string
+          votes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_notes_lecture_id_fkey"
+            columns: ["lecture_id"]
+            isOneToOne: false
+            referencedRelation: "lectures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "professor" | "student"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -321,6 +576,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "professor", "student"],
+    },
   },
 } as const
