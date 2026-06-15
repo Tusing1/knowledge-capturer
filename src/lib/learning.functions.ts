@@ -190,11 +190,11 @@ export const generateConceptMap = createServerFn({ method: "POST" })
         { role: "user", content: out.full_transcript.slice(0, 40000) },
       ],
     });
-    let parsed: unknown;
-    try { parsed = JSON.parse(raw); } catch { throw new Error("AI returned invalid JSON."); }
+    let parsed: Json;
+    try { parsed = JSON.parse(raw) as Json; } catch { throw new Error("AI returned invalid JSON."); }
     const { error } = await context.supabase
       .from("lecture_outputs")
-      .update({ concept_map: parsed as Json })
+      .update({ concept_map: parsed })
       .eq("lecture_id", data.lectureId);
     if (error) throw new Error(error.message);
     return { conceptMap: parsed };
@@ -226,11 +226,11 @@ export const generateCitations = createServerFn({ method: "POST" })
         { role: "user", content: out.full_transcript.slice(0, 40000) },
       ],
     });
-    let parsed: unknown;
-    try { parsed = JSON.parse(raw); } catch { throw new Error("AI returned invalid JSON."); }
+    let parsed: Json;
+    try { parsed = JSON.parse(raw) as Json; } catch { throw new Error("AI returned invalid JSON."); }
     const { error } = await context.supabase
       .from("lecture_outputs")
-      .update({ citations: parsed as Json })
+      .update({ citations: parsed })
       .eq("lecture_id", data.lectureId);
     if (error) throw new Error(error.message);
     return { citations: parsed };
@@ -306,11 +306,11 @@ export const generateGapAnalysis = createServerFn({ method: "POST" })
         },
       ],
     });
-    let parsed: unknown;
-    try { parsed = JSON.parse(raw); } catch { throw new Error("AI returned invalid JSON."); }
+    let parsed: Json;
+    try { parsed = JSON.parse(raw) as Json; } catch { throw new Error("AI returned invalid JSON."); }
     const { error } = await context.supabase
       .from("lecture_outputs")
-      .update({ gap_analysis: parsed as Json })
+      .update({ gap_analysis: parsed })
       .eq("lecture_id", data.lectureId);
     if (error) throw new Error(error.message);
     return { gapAnalysis: parsed };
