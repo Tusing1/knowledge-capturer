@@ -10,6 +10,8 @@ export type GatewayMessage = {
             type: "input_audio";
             input_audio: { data: string; format: string };
           }
+        | { type: "image_url"; image_url: { url: string } }
+        | { type: "file"; file: { filename: string; file_data: string } }
       >;
 };
 
