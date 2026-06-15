@@ -18,12 +18,17 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShareShareIdRouteImport } from './routes/share.$shareId'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated/search'
+import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
 import { Route as AuthenticatedRecordRouteImport } from './routes/_authenticated/record'
+import { Route as AuthenticatedProfessorRouteImport } from './routes/_authenticated/professor'
+import { Route as AuthenticatedExamsRouteImport } from './routes/_authenticated/exams'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCoursesRouteImport } from './routes/_authenticated/courses'
 import { Route as AuthenticatedLecturesLectureIdRouteImport } from './routes/_authenticated/lectures.$lectureId'
 import { Route as AuthenticatedCoursesCourseRouteImport } from './routes/_authenticated/courses.$course'
 import { Route as AuthenticatedLecturesLectureIdStudyRouteImport } from './routes/_authenticated/lectures.$lectureId.study'
+import { Route as AuthenticatedLecturesLectureIdExtrasRouteImport } from './routes/_authenticated/lectures.$lectureId.extras'
+import { Route as AuthenticatedCoursesCourseRoomRouteImport } from './routes/_authenticated/courses.$course.room'
 
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
@@ -69,9 +74,24 @@ const AuthenticatedSearchRoute = AuthenticatedSearchRouteImport.update({
   path: '/search',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedReviewRoute = AuthenticatedReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedRecordRoute = AuthenticatedRecordRouteImport.update({
   id: '/record',
   path: '/record',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProfessorRoute = AuthenticatedProfessorRouteImport.update({
+  id: '/professor',
+  path: '/professor',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedExamsRoute = AuthenticatedExamsRouteImport.update({
+  id: '/exams',
+  path: '/exams',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -102,6 +122,18 @@ const AuthenticatedLecturesLectureIdStudyRoute =
     path: '/study',
     getParentRoute: () => AuthenticatedLecturesLectureIdRoute,
   } as any)
+const AuthenticatedLecturesLectureIdExtrasRoute =
+  AuthenticatedLecturesLectureIdExtrasRouteImport.update({
+    id: '/extras',
+    path: '/extras',
+    getParentRoute: () => AuthenticatedLecturesLectureIdRoute,
+  } as any)
+const AuthenticatedCoursesCourseRoomRoute =
+  AuthenticatedCoursesCourseRoomRouteImport.update({
+    id: '/room',
+    path: '/room',
+    getParentRoute: () => AuthenticatedCoursesCourseRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -111,12 +143,17 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/courses': typeof AuthenticatedCoursesRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/exams': typeof AuthenticatedExamsRoute
+  '/professor': typeof AuthenticatedProfessorRoute
   '/record': typeof AuthenticatedRecordRoute
+  '/review': typeof AuthenticatedReviewRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/share/$shareId': typeof ShareShareIdRoute
-  '/courses/$course': typeof AuthenticatedCoursesCourseRoute
+  '/courses/$course': typeof AuthenticatedCoursesCourseRouteWithChildren
   '/lectures/$lectureId': typeof AuthenticatedLecturesLectureIdRouteWithChildren
+  '/courses/$course/room': typeof AuthenticatedCoursesCourseRoomRoute
+  '/lectures/$lectureId/extras': typeof AuthenticatedLecturesLectureIdExtrasRoute
   '/lectures/$lectureId/study': typeof AuthenticatedLecturesLectureIdStudyRoute
 }
 export interface FileRoutesByTo {
@@ -127,12 +164,17 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/courses': typeof AuthenticatedCoursesRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/exams': typeof AuthenticatedExamsRoute
+  '/professor': typeof AuthenticatedProfessorRoute
   '/record': typeof AuthenticatedRecordRoute
+  '/review': typeof AuthenticatedReviewRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/share/$shareId': typeof ShareShareIdRoute
-  '/courses/$course': typeof AuthenticatedCoursesCourseRoute
+  '/courses/$course': typeof AuthenticatedCoursesCourseRouteWithChildren
   '/lectures/$lectureId': typeof AuthenticatedLecturesLectureIdRouteWithChildren
+  '/courses/$course/room': typeof AuthenticatedCoursesCourseRoomRoute
+  '/lectures/$lectureId/extras': typeof AuthenticatedLecturesLectureIdExtrasRoute
   '/lectures/$lectureId/study': typeof AuthenticatedLecturesLectureIdStudyRoute
 }
 export interface FileRoutesById {
@@ -145,12 +187,17 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/_authenticated/courses': typeof AuthenticatedCoursesRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/exams': typeof AuthenticatedExamsRoute
+  '/_authenticated/professor': typeof AuthenticatedProfessorRoute
   '/_authenticated/record': typeof AuthenticatedRecordRoute
+  '/_authenticated/review': typeof AuthenticatedReviewRoute
   '/_authenticated/search': typeof AuthenticatedSearchRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/share/$shareId': typeof ShareShareIdRoute
-  '/_authenticated/courses/$course': typeof AuthenticatedCoursesCourseRoute
+  '/_authenticated/courses/$course': typeof AuthenticatedCoursesCourseRouteWithChildren
   '/_authenticated/lectures/$lectureId': typeof AuthenticatedLecturesLectureIdRouteWithChildren
+  '/_authenticated/courses/$course/room': typeof AuthenticatedCoursesCourseRoomRoute
+  '/_authenticated/lectures/$lectureId/extras': typeof AuthenticatedLecturesLectureIdExtrasRoute
   '/_authenticated/lectures/$lectureId/study': typeof AuthenticatedLecturesLectureIdStudyRoute
 }
 export interface FileRouteTypes {
@@ -163,12 +210,17 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/courses'
     | '/dashboard'
+    | '/exams'
+    | '/professor'
     | '/record'
+    | '/review'
     | '/search'
     | '/settings'
     | '/share/$shareId'
     | '/courses/$course'
     | '/lectures/$lectureId'
+    | '/courses/$course/room'
+    | '/lectures/$lectureId/extras'
     | '/lectures/$lectureId/study'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -179,12 +231,17 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/courses'
     | '/dashboard'
+    | '/exams'
+    | '/professor'
     | '/record'
+    | '/review'
     | '/search'
     | '/settings'
     | '/share/$shareId'
     | '/courses/$course'
     | '/lectures/$lectureId'
+    | '/courses/$course/room'
+    | '/lectures/$lectureId/extras'
     | '/lectures/$lectureId/study'
   id:
     | '__root__'
@@ -196,12 +253,17 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/_authenticated/courses'
     | '/_authenticated/dashboard'
+    | '/_authenticated/exams'
+    | '/_authenticated/professor'
     | '/_authenticated/record'
+    | '/_authenticated/review'
     | '/_authenticated/search'
     | '/_authenticated/settings'
     | '/share/$shareId'
     | '/_authenticated/courses/$course'
     | '/_authenticated/lectures/$lectureId'
+    | '/_authenticated/courses/$course/room'
+    | '/_authenticated/lectures/$lectureId/extras'
     | '/_authenticated/lectures/$lectureId/study'
   fileRoutesById: FileRoutesById
 }
@@ -280,11 +342,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSearchRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/review': {
+      id: '/_authenticated/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof AuthenticatedReviewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/record': {
       id: '/_authenticated/record'
       path: '/record'
       fullPath: '/record'
       preLoaderRoute: typeof AuthenticatedRecordRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/professor': {
+      id: '/_authenticated/professor'
+      path: '/professor'
+      fullPath: '/professor'
+      preLoaderRoute: typeof AuthenticatedProfessorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/exams': {
+      id: '/_authenticated/exams'
+      path: '/exams'
+      fullPath: '/exams'
+      preLoaderRoute: typeof AuthenticatedExamsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
@@ -322,26 +405,57 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLecturesLectureIdStudyRouteImport
       parentRoute: typeof AuthenticatedLecturesLectureIdRoute
     }
+    '/_authenticated/lectures/$lectureId/extras': {
+      id: '/_authenticated/lectures/$lectureId/extras'
+      path: '/extras'
+      fullPath: '/lectures/$lectureId/extras'
+      preLoaderRoute: typeof AuthenticatedLecturesLectureIdExtrasRouteImport
+      parentRoute: typeof AuthenticatedLecturesLectureIdRoute
+    }
+    '/_authenticated/courses/$course/room': {
+      id: '/_authenticated/courses/$course/room'
+      path: '/room'
+      fullPath: '/courses/$course/room'
+      preLoaderRoute: typeof AuthenticatedCoursesCourseRoomRouteImport
+      parentRoute: typeof AuthenticatedCoursesCourseRoute
+    }
   }
 }
 
+interface AuthenticatedCoursesCourseRouteChildren {
+  AuthenticatedCoursesCourseRoomRoute: typeof AuthenticatedCoursesCourseRoomRoute
+}
+
+const AuthenticatedCoursesCourseRouteChildren: AuthenticatedCoursesCourseRouteChildren =
+  {
+    AuthenticatedCoursesCourseRoomRoute: AuthenticatedCoursesCourseRoomRoute,
+  }
+
+const AuthenticatedCoursesCourseRouteWithChildren =
+  AuthenticatedCoursesCourseRoute._addFileChildren(
+    AuthenticatedCoursesCourseRouteChildren,
+  )
+
 interface AuthenticatedCoursesRouteChildren {
-  AuthenticatedCoursesCourseRoute: typeof AuthenticatedCoursesCourseRoute
+  AuthenticatedCoursesCourseRoute: typeof AuthenticatedCoursesCourseRouteWithChildren
 }
 
 const AuthenticatedCoursesRouteChildren: AuthenticatedCoursesRouteChildren = {
-  AuthenticatedCoursesCourseRoute: AuthenticatedCoursesCourseRoute,
+  AuthenticatedCoursesCourseRoute: AuthenticatedCoursesCourseRouteWithChildren,
 }
 
 const AuthenticatedCoursesRouteWithChildren =
   AuthenticatedCoursesRoute._addFileChildren(AuthenticatedCoursesRouteChildren)
 
 interface AuthenticatedLecturesLectureIdRouteChildren {
+  AuthenticatedLecturesLectureIdExtrasRoute: typeof AuthenticatedLecturesLectureIdExtrasRoute
   AuthenticatedLecturesLectureIdStudyRoute: typeof AuthenticatedLecturesLectureIdStudyRoute
 }
 
 const AuthenticatedLecturesLectureIdRouteChildren: AuthenticatedLecturesLectureIdRouteChildren =
   {
+    AuthenticatedLecturesLectureIdExtrasRoute:
+      AuthenticatedLecturesLectureIdExtrasRoute,
     AuthenticatedLecturesLectureIdStudyRoute:
       AuthenticatedLecturesLectureIdStudyRoute,
   }
@@ -354,7 +468,10 @@ const AuthenticatedLecturesLectureIdRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCoursesRoute: typeof AuthenticatedCoursesRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedExamsRoute: typeof AuthenticatedExamsRoute
+  AuthenticatedProfessorRoute: typeof AuthenticatedProfessorRoute
   AuthenticatedRecordRoute: typeof AuthenticatedRecordRoute
+  AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedLecturesLectureIdRoute: typeof AuthenticatedLecturesLectureIdRouteWithChildren
@@ -363,7 +480,10 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCoursesRoute: AuthenticatedCoursesRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedExamsRoute: AuthenticatedExamsRoute,
+  AuthenticatedProfessorRoute: AuthenticatedProfessorRoute,
   AuthenticatedRecordRoute: AuthenticatedRecordRoute,
+  AuthenticatedReviewRoute: AuthenticatedReviewRoute,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedLecturesLectureIdRoute:

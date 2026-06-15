@@ -84,7 +84,10 @@ function MobileSidebar({ open, onOpenChange }: { open: boolean; onOpenChange: (v
     navigate({ to: "/auth", replace: true });
   }
 
-  const items: { to: "/settings" | "/pricing" | "/how-it-works" | "/privacy"; label: string; icon: typeof Settings }[] = [
+  const items: { to: "/review" | "/exams" | "/professor" | "/settings" | "/pricing" | "/how-it-works" | "/privacy"; label: string; icon: typeof Settings }[] = [
+    { to: "/review", label: "Daily review", icon: Sparkles },
+    { to: "/exams", label: "Exams", icon: HelpCircle },
+    { to: "/professor", label: "Professor mode", icon: Shield },
     { to: "/settings", label: "Settings", icon: Settings },
     { to: "/pricing", label: "Pricing", icon: Sparkles },
     { to: "/how-it-works", label: "How it works", icon: HelpCircle },
