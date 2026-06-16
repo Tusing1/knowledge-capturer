@@ -279,6 +279,15 @@ function LecturePage() {
                     <DropdownMenuItem onClick={exportPdf}>
                       <FileDown className="h-4 w-4" /> PDF
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={copyMarkdown}>
+                      <ClipboardCopy className="h-4 w-4" /> Copy markdown (Notion)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={openInObsidian}>
+                      <FileText className="h-4 w-4" /> Open in Obsidian
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={openInGoogleDocs}>
+                      <ExternalLink className="h-4 w-4" /> Send to Google Docs
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
                 <Button variant="outline" size="sm" onClick={() => share.mutate(!shareId)}>
