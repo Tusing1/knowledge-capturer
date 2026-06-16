@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Mic, Sparkles, Zap, WifiOff } from "lucide-react";
+import { useState } from "react";
+import { Menu, Mic, Sparkles, Zap, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -23,23 +25,53 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="mx-auto flex max-w-5xl items-center justify-between px-4 py-5">
-        <div className="flex items-center gap-2 font-semibold tracking-tight">
-          <span className="grid h-8 w-8 place-items-center rounded-md bg-foreground text-background">
+      <header className="mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-5 sm:flex sm:justify-between">
+        <div className="flex min-w-0 items-center gap-2 font-semibold tracking-tight">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-foreground text-background">
             <Mic className="h-4 w-4" />
           </span>
-          LectureLoop
+          <span className="truncate">LectureLoop</span>
         </div>
-        <nav className="flex items-center gap-1 text-sm">
+        <nav className="hidden items-center gap-1 text-sm sm:flex">
           <Link to="/how-it-works" className="rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground">How it works</Link>
           <Link to="/pricing" className="rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground">Pricing</Link>
           <Button asChild variant="outline" size="sm" className="ml-2">
             <Link to="/auth">Sign in</Link>
           </Button>
         </nav>
+        <Button variant="ghost" size="icon" aria-label="Open menu" className="sm:hidden" onClick={() => setMenuOpen(true)}>
+          <Menu className="h-4 w-4" />
+        </Button>
       </header>
+
+      <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+        <SheetContent side="right" className="w-72 p-0">
+          <div className="flex h-full flex-col">
+            <div className="border-b border-border/60 px-4 py-3">
+              <SheetTitle className="flex items-center gap-2 text-base">
+                <span className="grid h-7 w-7 place-items-center rounded-md bg-foreground text-background">
+                  <Mic className="h-3.5 w-3.5" />
+                </span>
+                LectureLoop
+              </SheetTitle>
+            </div>
+            <nav className="flex-1 p-2">
+              <Link to="/how-it-works" onClick={() => setMenuOpen(false)} className="block rounded-lg px-3 py-2.5 text-sm hover:bg-accent">How it works</Link>
+              <Link to="/pricing" onClick={() => setMenuOpen(false)} className="block rounded-lg px-3 py-2.5 text-sm hover:bg-accent">Pricing</Link>
+              <Link to="/privacy" onClick={() => setMenuOpen(false)} className="block rounded-lg px-3 py-2.5 text-sm hover:bg-accent">Privacy</Link>
+            </nav>
+            <div className="border-t border-border/60 p-3">
+              <Button asChild className="w-full" onClick={() => setMenuOpen(false)}>
+                <Link to="/auth">Sign in</Link>
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <main className="mx-auto max-w-5xl px-4 pb-20 pt-12 sm:pt-20">
         <h1 className="text-balance text-4xl font-semibold tracking-tight sm:text-5xl">
