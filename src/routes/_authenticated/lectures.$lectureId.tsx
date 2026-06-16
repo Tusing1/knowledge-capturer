@@ -9,7 +9,7 @@ import { AppHeader } from "@/components/app-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, BookOpen, Loader2, RefreshCw, WifiOff, Star, Share2, Download, Copy, X, FileDown, Play, Sparkles } from "lucide-react";
+import { ArrowLeft, BookOpen, Loader2, RefreshCw, WifiOff, Star, Share2, Download, Copy, X, FileDown, Play, Sparkles, FileText, ExternalLink, ClipboardCopy } from "lucide-react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
@@ -180,6 +180,30 @@ function LecturePage() {
     doc.save(`${(lecture?.title ?? "lecture").replace(/[^a-z0-9-_ ]/gi, "_")}.pdf`);
   }
 
+  async function copyMarkdown() {
+    const md = buildMarkdown(lecture?.title ?? "Lecture", output);
+    try {
+      await navigator.clipboard.writeText(md);
+      toast.success("Copied — paste into Notion, Obsidian, or anywhere");
+    } catch {
+      toast.error("Clipboard blocked");
+    }
+  }
+
+  function openInObsidian() {
+    const md = buildMarkdown(lecture?.title ?? "Lecture", output);
+    const name = (lecture?.title ?? "lecture").replace(/[^a-z0-9-_ ]/gi, "_");
+    const url = `obsidian://new?name=${encodeURIComponent(name)}&content=${encodeURIComponent(md)}`;
+    window.location.href = url;
+    setTimeout(() => toast.message("If Obsidian didn't open, install it or use Copy markdown"), 800);
+  }
+
+  async function openInGoogleDocs() {
+    await copyMarkdown();
+    window.open("https://docs.google.com/document/create", "_blank", "noopener");
+    toast.message("New Google Doc opened — paste with Cmd/Ctrl+V");
+  }
+
   async function retryFinalize() {
     try {
       await finalize({ data: { lectureId } });
@@ -254,6 +278,15 @@ function LecturePage() {
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={exportPdf}>
                       <FileDown className="h-4 w-4" /> PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={copyMarkdown}>
+                      <ClipboardCopy className="h-4 w-4" /> Copy markdown (Notion)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={openInObsidian}>
+                      <FileText className="h-4 w-4" /> Open in Obsidian
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={openInGoogleDocs}>
+                      <ExternalLink className="h-4 w-4" /> Send to Google Docs
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
