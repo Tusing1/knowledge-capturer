@@ -1,13 +1,15 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Mic, LayoutDashboard, LogOut, BookOpen, Settings, Search, Brain } from "lucide-react";
+import { useState } from "react";
+import { Mic, LayoutDashboard, LogOut, BookOpen, Settings, Search, Brain, Menu } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
-import { MobileTabBar } from "@/components/mobile-shell";
+import { MobileTabBar, AppSidebar } from "@/components/mobile-shell";
 
 export function AppHeader() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   async function signOut() {
     await qc.cancelQueries();
@@ -86,10 +88,20 @@ export function AppHeader() {
           <Button variant="ghost" size="sm" onClick={signOut} className="hidden md:inline-flex">
             <LogOut className="h-3.5 w-3.5" /> Sign out
           </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMenuOpen(true)}
+            aria-label="Open menu"
+            className="hidden md:inline-flex"
+          >
+            <Menu className="h-4 w-4" />
+          </Button>
         </div>
       </div>
     </header>
     <MobileTabBar />
+    <AppSidebar open={menuOpen} onOpenChange={setMenuOpen} />
     </>
   );
 }

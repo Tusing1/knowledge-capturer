@@ -15,6 +15,10 @@ const TABS: Tab[] = [
   { to: "/search", label: "Search", icon: Search },
 ];
 
+export function AppSidebar({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  return <MobileSidebar open={open} onOpenChange={onOpenChange} />;
+}
+
 export function MobileTabBar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [menuOpen, setMenuOpen] = useState(false);
