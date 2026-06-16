@@ -93,7 +93,7 @@ export function AppHeader() {
             size="icon"
             onClick={() => setMenuOpen(true)}
             aria-label="Open menu"
-            className="hidden md:inline-flex"
+            className="inline-flex"
           >
             <Menu className="h-4 w-4" />
           </Button>
