@@ -5,11 +5,34 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+  },
+  vite: {
+    plugins: [
+      VitePWA({
+        registerType: "autoUpdate",
+        manifest: {
+          name: "LectureLoop",
+          short_name: "LectureLoop",
+          theme_color: "#ffffff",
+          icons: [
+            {
+              src: "https://lectureloop.app/icon.png", // placeholder
+              sizes: "192x192",
+              type: "image/png"
+            }
+          ]
+        },
+        workbox: {
+          globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
+        },
+      }),
+    ],
   },
 });

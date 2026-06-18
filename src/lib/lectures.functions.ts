@@ -155,33 +155,27 @@ export const transcribeChunk = createServerFn({ method: "POST" })
       if (dlErr || !blob) throw new Error(dlErr?.message ?? "Audio download failed");
 
       const buf = new Uint8Array(await blob.arrayBuffer());
-      // base64 encode
-      let bin = "";
-      const chunkSize = 0x8000;
-      for (let i = 0; i < buf.length; i += chunkSize) {
-        bin += String.fromCharCode(...buf.subarray(i, i + chunkSize));
-      }
-      const base64 = btoa(bin);
-      const fmt = chunk.mime_type.includes("webm") ? "webm" : chunk.mime_type.includes("mp4") ? "mp4" : "webm";
 
-      const transcript = await callGateway({
-        model: TRANSCRIBE_MODEL,
-        temperature: 0,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a precise lecture transcriber. Output ONLY the verbatim spoken words from the audio. No commentary, no timestamps, no speaker labels, no markdown. If audio is silent or unintelligible, return an empty string.",
-          },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: "Transcribe this 3-minute lecture segment." },
-              { type: "input_audio", input_audio: { data: base64, format: fmt } },
-            ],
-          },
-        ],
+      // Deepgram REST API integration
+      const deepgramKey = process.env.DEEPGRAM_API_KEY || (import.meta as any).env?.DEEPGRAM_API_KEY;
+      if (!deepgramKey) throw new Error("Missing DEEPGRAM_API_KEY");
+
+      const response = await fetch("https://api.deepgram.com/v1/listen?model=nova-3&smart_format=true", {
+        method: "POST",
+        headers: {
+          "Authorization": `Token ${deepgramKey}`,
+          "Content-Type": chunk.mime_type,
+        },
+        body: buf,
       });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Deepgram API error: ${response.status} ${errText}`);
+      }
+
+      const dgResult = await response.json();
+      const transcript = dgResult.results?.channels?.[0]?.alternatives?.[0]?.transcript || "";
 
       // Quick partial notes pass
       let partialNotes: unknown = null;

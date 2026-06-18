@@ -424,6 +424,8 @@ function RecordPage() {
               ) : null}
             </div>
 
+            {recording && mode === "cloud" && <AudioVisualizer stream={streamRef.current} />}
+
             {mode === "ondevice" && recording && (
               <div className="mt-4 rounded-md border border-border/60 bg-background/40 p-3">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Live transcript</p>
@@ -463,4 +465,70 @@ function RecordPage() {
       </main>
     </div>
   );
+}
+
+function AudioVisualizer({ stream }: { stream: MediaStream | null }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    if (!stream || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let audioCtx: AudioContext;
+    try {
+      audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    } catch {
+      return;
+    }
+
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    let source: MediaStreamAudioSourceNode | null = null;
+    try {
+      source = audioCtx.createMediaStreamSource(stream);
+      source.connect(analyser);
+    } catch (e) {
+      console.warn("Failed to connect audio source", e);
+      return;
+    }
+
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    let animationFrame: number;
+
+    const draw = () => {
+      animationFrame = requestAnimationFrame(draw);
+      analyser.getByteFrequencyData(dataArray);
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const barWidth = (canvas.width / bufferLength) * 2.5;
+      let barHeight;
+      let x = 0;
+
+      for (let i = 0; i < bufferLength; i++) {
+        barHeight = dataArray[i] / 2;
+        ctx.fillStyle = `rgb(${barHeight + 100}, 50, 250)`;
+        ctx.fillRect(x, canvas.height - barHeight / 2, barWidth, barHeight / 2);
+        x += barWidth + 1;
+      }
+    };
+
+    draw();
+
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      try {
+        if (source) source.disconnect();
+        if (audioCtx.state !== 'closed') audioCtx.close();
+      } catch {}
+    };
+  }, [stream]);
+
+  if (!stream) return null;
+
+  return <canvas ref={canvasRef} width={600} height={80} className="mt-6 w-full h-[80px] rounded-lg opacity-80" />;
 }
