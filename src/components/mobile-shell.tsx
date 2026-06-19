@@ -19,9 +19,8 @@ export function AppSidebar({ open, onOpenChange }: { open: boolean; onOpenChange
   return <MobileSidebar open={open} onOpenChange={onOpenChange} />;
 }
 
-export function MobileTabBar() {
+export function MobileTabBar({ menuOpen, setMenuOpen }: { menuOpen: boolean, setMenuOpen: (v: boolean) => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [menuOpen, setMenuOpen] = useState(false);
   return (
     <>
       <nav
@@ -69,7 +68,6 @@ export function MobileTabBar() {
           </li>
         </ul>
       </nav>
-      <MobileSidebar open={menuOpen} onOpenChange={setMenuOpen} />
       {/* Spacer so content doesn't sit under the tab bar */}
       <div aria-hidden className="h-16 md:hidden" />
     </>

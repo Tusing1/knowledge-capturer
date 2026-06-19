@@ -100,7 +100,7 @@ export function AppHeader() {
         </div>
       </div>
     </header>
-    <MobileTabBar />
+    <MobileTabBar menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
     <AppSidebar open={menuOpen} onOpenChange={setMenuOpen} />
     </>
   );

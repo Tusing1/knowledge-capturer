@@ -33,7 +33,7 @@ type ChunkUiState = {
   preview?: string;
 };
 
-type Mode = "ondevice" | "cloud";
+type Mode = "ondevice" | "cloud" | "cloud-pro";
 
 function RecordPage() {
   const navigate = useNavigate();
@@ -51,9 +51,9 @@ function RecordPage() {
   const [course, setCourse] = useState("");
   const [mode, setMode] = useState<Mode>("ondevice");
 
-  // Default Pro users to cloud once profile loads
+  // Default Pro users to cloud-pro once profile loads
   useEffect(() => {
-    if (isPro) setMode("cloud");
+    if (isPro) setMode("cloud-pro");
   }, [isPro]);
   const [lectureId, setLectureId] = useState<string | null>(null);
   const [recording, setRecording] = useState(false);
@@ -75,11 +75,31 @@ function RecordPage() {
   const interimRef = useRef<string>("");
   const sliceStartRef = useRef<number>(0);
 
-  const SpeechRecognition: any =
-    typeof window !== "undefined"
-      ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-      : null;
-  const hasOnDevice = !!SpeechRecognition;
+  const workerRef = useRef<Worker | null>(null);
+  const [localModelLoaded, setLocalModelLoaded] = useState(false);
+
+  useEffect(() => {
+    workerRef.current = new Worker(new URL('../../lib/whisper-worker.ts', import.meta.url), {
+      type: 'module'
+    });
+    workerRef.current.postMessage({ type: 'load' });
+    workerRef.current.onmessage = (e) => {
+      if (e.data.type === 'loaded') {
+        setLocalModelLoaded(true);
+      } else if (e.data.type === 'result') {
+        const { text } = e.data;
+        if (text) {
+          bufferRef.current += (bufferRef.current ? " " : "") + text.trim();
+          setLiveText(bufferRef.current.slice(-400));
+        }
+      } else if (e.data.type === 'error') {
+        console.error("Whisper Error:", e.data.error);
+      }
+    };
+    return () => {
+      workerRef.current?.terminate();
+    };
+  }, []);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -103,11 +123,15 @@ function RecordPage() {
     });
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
-    recordersRef.current = [];
     if (recognitionRef.current) {
       try {
-        recognitionRef.current.onend = null;
-        recognitionRef.current.stop();
+        if (recognitionRef.current.onend) recognitionRef.current.onend = null;
+        if (recognitionRef.current.stop) recognitionRef.current.stop();
+        if (recognitionRef.current.ws) recognitionRef.current.ws.close();
+        if (recognitionRef.current.rec) recognitionRef.current.rec.stop();
+        if (recognitionRef.current.audioCtx && recognitionRef.current.audioCtx.state !== 'closed') {
+          recognitionRef.current.audioCtx.close();
+        }
       } catch {
         /* ignore */
       }
@@ -128,12 +152,12 @@ function RecordPage() {
       toast.error("Give your lecture a title first.");
       return;
     }
-    if (mode === "cloud" && !isPro) {
+    if ((mode === "cloud" || mode === "cloud-pro") && !isPro) {
       toast.error("Cloud transcription is a Pro feature. Upgrade or use on-device.");
       return;
     }
-    if (mode === "ondevice" && !hasOnDevice) {
-      toast.error("On-device transcription isn't supported on this browser. Use Chrome on desktop/Android, or switch to Cloud mode.");
+    if (mode === "ondevice" && !localModelLoaded) {
+      toast.error("Local AI model is still downloading. Please wait a few seconds.");
       return;
     }
     try {
@@ -155,17 +179,76 @@ function RecordPage() {
         });
         streamRef.current = stream;
         const mime = pickMime();
-        recordersRef.current = [makeRecorder(stream, mime), makeRecorder(stream, mime)];
-        recordersRef.current[0].start();
+        
+        const rec = new MediaRecorder(stream, { mimeType: mime });
+        rec.ondataavailable = async (e) => {
+          if (e.data && e.data.size > 1000) {
+            const idx = indexRef.current++;
+            await handleChunkBlob(e.data, mime, idx);
+          }
+        };
+        rec.start();
+        recordersRef.current = [rec];
+
+        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 512;
+        analyser.smoothingTimeConstant = 0.1;
+        const source = audioCtx.createMediaStreamSource(stream);
+        source.connect(analyser);
+        
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        let silentTime = 0;
+        let isSpeaking = false;
+        
         cycleTimerRef.current = setInterval(() => {
-          const current = recordersRef.current[activeRef.current];
-          const next = recordersRef.current[1 - activeRef.current];
-          try { next.start(); } catch { /* ignore */ }
-          try { if (current.state === "recording") current.stop(); } catch { /* ignore */ }
-          activeRef.current = 1 - activeRef.current;
+          analyser.getByteFrequencyData(dataArray);
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+          const avg = sum / dataArray.length;
+          
+          if (avg > 10) {
+            isSpeaking = true;
+            silentTime = 0;
+          } else {
+            if (isSpeaking) {
+              silentTime += 100;
+              if (silentTime >= 2000) {
+                if (rec.state === "recording") rec.requestData();
+                isSpeaking = false;
+                silentTime = 0;
+              }
+            }
+          }
+        }, 100);
+        recognitionRef.current = { audioCtx };
+      } else if (mode === "cloud-pro") {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        });
+        streamRef.current = stream;
+        startProLiveRecognition();
+        cycleTimerRef.current = setInterval(() => {
+          flushOnDeviceSlice();
         }, CHUNK_MS);
       } else {
-        startOnDeviceRecognition();
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        });
+        streamRef.current = stream;
+        const mime = pickMime();
+        const rec = new MediaRecorder(stream, { mimeType: mime });
+        
+        let chunkIndexCount = 0;
+        rec.ondataavailable = async (e) => {
+          if (e.data && e.data.size > 1000) {
+            const idx = chunkIndexCount++;
+            processAudioBlob(e.data, idx);
+          }
+        };
+        rec.start(5000);
+        recordersRef.current = [rec];
+
         cycleTimerRef.current = setInterval(() => {
           flushOnDeviceSlice();
         }, CHUNK_MS);
@@ -180,39 +263,57 @@ function RecordPage() {
     }
   }
 
-  function startOnDeviceRecognition() {
-    const rec = new SpeechRecognition();
-    rec.continuous = true;
-    rec.interimResults = true;
-    rec.lang = navigator.language || "en-US";
-    rec.onresult = (event: any) => {
-      let interim = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const res = event.results[i];
-        if (res.isFinal) {
-          bufferRef.current += (bufferRef.current ? " " : "") + res[0].transcript.trim();
-        } else {
-          interim += res[0].transcript;
-        }
-      }
-      interimRef.current = interim;
-      setLiveText((bufferRef.current + " " + interim).slice(-400));
-    };
-    rec.onerror = (e: any) => {
-      if (e.error === "no-speech" || e.error === "aborted") return;
-      console.warn("Speech recognition error:", e.error);
-    };
-    rec.onend = () => {
-      // Auto-restart while we're still recording (mobile browsers stop after silence)
-      if (recognitionRef.current === rec && lectureIdRef.current && !finalizing) {
-        try { rec.start(); } catch { /* ignore */ }
-      }
-    };
-    recognitionRef.current = rec;
-    try { rec.start(); } catch (err) {
-      toast.error("Could not access the microphone for on-device transcription.");
-      throw err;
+  async function processAudioBlob(blob: Blob, chunkIndex: number) {
+    if (!workerRef.current) return;
+    try {
+      const arrayBuffer = await blob.arrayBuffer();
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+      const audioData = audioBuffer.getChannelData(0);
+      workerRef.current.postMessage({ type: 'transcribe', audioData, chunkIndex }, [audioData.buffer]);
+      if (audioCtx.state !== 'closed') audioCtx.close();
+    } catch (err) {
+      console.error("Failed to decode audio for local Whisper", err);
     }
+  }
+
+  function startProLiveRecognition() {
+    const ws = new WebSocket("wss://api.deepgram.com/v1/listen?model=nova-3&smart_format=true", [
+      "token",
+      import.meta.env.VITE_DEEPGRAM_API_KEY
+    ]);
+    
+    ws.onopen = () => {
+      const stream = streamRef.current;
+      if (!stream) return;
+      const mime = pickMime();
+      const rec = new MediaRecorder(stream, { mimeType: mime });
+      rec.ondataavailable = (e) => {
+        if (e.data.size > 0 && ws.readyState === WebSocket.OPEN) {
+          ws.send(e.data);
+        }
+      };
+      rec.start(250);
+      recognitionRef.current = { ws, rec };
+    };
+
+    ws.onmessage = (msg) => {
+      const data = JSON.parse(msg.data);
+      const transcript = data.channel?.alternatives?.[0]?.transcript;
+      if (transcript) {
+        if (data.is_final) {
+          bufferRef.current += (bufferRef.current ? " " : "") + transcript;
+          interimRef.current = "";
+        } else {
+          interimRef.current = transcript;
+        }
+        setLiveText((bufferRef.current + " " + interimRef.current).slice(-400));
+      }
+    };
+    
+    ws.onerror = (e) => {
+      console.error("Deepgram WS Error", e);
+    };
   }
 
   async function flushOnDeviceSlice() {
@@ -234,22 +335,7 @@ function RecordPage() {
     }
   }
 
-  function makeRecorder(stream: MediaStream, mime: string): MediaRecorder {
-    const rec = new MediaRecorder(stream, { mimeType: mime });
-    const parts: Blob[] = [];
-    rec.ondataavailable = (e) => {
-      if (e.data && e.data.size > 0) parts.push(e.data);
-    };
-    rec.onstop = async () => {
-      const blob = new Blob(parts, { type: mime });
-      parts.length = 0;
-      if (blob.size < 1000) return; // skip empty
-      const idx = indexRef.current++;
-      await handleChunkBlob(blob, mime, idx);
-    };
-    return rec;
-  }
-
+  // handleChunkBlob is used by VAD logic
   async function handleChunkBlob(blob: Blob, mime: string, index: number) {
     const userId = userIdRef.current;
     const lectureId = lectureIdRef.current;
@@ -287,8 +373,12 @@ function RecordPage() {
     if (!id) return;
     setRecording(false);
     setFinalizing(true);
-    // Flush any pending on-device text BEFORE tearing down recognition
-    if (mode === "ondevice") {
+    // Request final data from VAD recorder if applicable
+    if (mode === "cloud" && recordersRef.current[0] && recordersRef.current[0].state === "recording") {
+      try { recordersRef.current[0].requestData(); } catch { /* ignore */ }
+    }
+    // Flush any pending text BEFORE tearing down recognition
+    if (mode === "ondevice" || mode === "cloud-pro") {
       await flushOnDeviceSlice();
     }
     stopAll();
@@ -347,17 +437,18 @@ function RecordPage() {
             </div>
             <div className="space-y-2">
               <Label>Transcription mode</Label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => setMode("ondevice")}
                   className={`rounded-lg border p-3 text-left transition ${mode === "ondevice" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"}`}
                 >
                   <div className="flex items-center gap-2 text-sm font-medium">
-                    <Smartphone className="h-4 w-4" /> On-device <span className="ml-auto text-xs text-muted-foreground">Free</span>
+                    <Smartphone className="h-4 w-4" /> Local
+                    <span className="ml-auto text-xs text-muted-foreground">Free</span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Your phone/laptop transcribes locally. Nothing leaves the device until notes are built.
+                    Your device transcribes locally. Fast and private.
                   </p>
                 </button>
                 <button
@@ -367,13 +458,29 @@ function RecordPage() {
                   className={`rounded-lg border p-3 text-left transition ${mode === "cloud" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"} ${!isPro ? "opacity-60" : ""}`}
                 >
                   <div className="flex items-center gap-2 text-sm font-medium">
-                    <Cloud className="h-4 w-4" /> Cloud
+                    <Cloud className="h-4 w-4" /> Cloud (Std)
                     <span className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground">
                       {!isPro && <Lock className="h-3 w-3" />} Pro
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Higher accuracy with our cloud model. Recommended for noisy rooms and accents.
+                    Uploads audio chunks in background. High accuracy.
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => isPro && setMode("cloud-pro")}
+                  disabled={!isPro}
+                  className={`rounded-lg border p-3 text-left transition ${mode === "cloud-pro" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"} ${!isPro ? "opacity-60" : ""}`}
+                >
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Mic className="h-4 w-4" /> Live (Pro)
+                    <span className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground">
+                      {!isPro && <Lock className="h-3 w-3" />} Pro
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Real-time magic via WebSockets. Zero latency notes.
                   </p>
                 </button>
               </div>
@@ -386,9 +493,9 @@ function RecordPage() {
                   .
                 </p>
               )}
-              {mode === "ondevice" && !hasOnDevice && (
-                <p className="text-xs text-destructive">
-                  Your browser doesn't expose on-device speech recognition. Switch to Cloud, or use Chrome.
+              {mode === "ondevice" && !localModelLoaded && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Loader2 className="h-3 w-3 animate-spin" /> Downloading local AI model (~40MB)...
                 </p>
               )}
             </div>
@@ -408,7 +515,7 @@ function RecordPage() {
                 <div className="flex items-center gap-2">
                   {recording && <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" /><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" /></span>}
                   <p className="text-sm font-medium">
-                    {recording ? `Recording · ${mode === "ondevice" ? "On-device" : "Cloud"}` : finalizing ? "Building your notes…" : "Stopped"}
+                    {recording ? `Recording · ${mode === "ondevice" ? "Local" : mode === "cloud-pro" ? "Live (Pro)" : "Cloud"}` : finalizing ? "Building your notes…" : "Stopped"}
                   </p>
                 </div>
                 <p className="mt-0.5 font-mono text-2xl tabular-nums">{minutes}:{seconds}</p>
@@ -424,9 +531,9 @@ function RecordPage() {
               ) : null}
             </div>
 
-            {recording && mode === "cloud" && <AudioVisualizer stream={streamRef.current} />}
+            {recording && (mode === "cloud" || mode === "cloud-pro") && <AudioVisualizer stream={streamRef.current} />}
 
-            {mode === "ondevice" && recording && (
+            {(mode === "ondevice" || mode === "cloud-pro") && recording && (
               <div className="mt-4 rounded-md border border-border/60 bg-background/40 p-3">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Live transcript</p>
                 <p className="mt-1 min-h-[2.5rem] text-sm text-foreground/80">
